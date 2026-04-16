@@ -2,19 +2,19 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 
-function LoginScreen() {
+function SignUpScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  async function handleLogin(e) {
+  async function handleSignUp(e) {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signUp({
       email,
       password,
     });
@@ -32,9 +32,9 @@ function LoginScreen() {
     <div className="mainBackground">
       <div className="container">
         <div className="welcomeMessage">
-          <h1>Please Log In</h1>
+          <h1>Create Profile</h1>
         </div>
-        <form onSubmit={handleLogin}>
+        <form onSubmit={handleSignUp}>
           <div className="userInfo">
             <p>Email</p>
             <input
@@ -49,13 +49,14 @@ function LoginScreen() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              minLength={6}
             />
           </div>
           {error && <p style={{ color: '#ff0000' }}>{error}</p>}
           <div>
             <Link to="/"><button type="button">Cancel</button></Link>
             <button type="submit" disabled={isLoading}>
-              {isLoading ? 'Logging in...' : 'Login'}
+              {isLoading ? 'Creating...' : 'Sign Up'}
             </button>
           </div>
         </form>
@@ -64,4 +65,4 @@ function LoginScreen() {
   );
 }
 
-export default LoginScreen;
+export default SignUpScreen;

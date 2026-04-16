@@ -1,19 +1,31 @@
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import SplashScreen from './Screens/SplashScreen';
+import LoginScreen from './Screens/LoginScreen';
+import SignUpScreen from './Screens/SignUpScreen';
+import HomeScreen from './Screens/HomeScreen';
+import ProtectedRoute from './components/ProtectedRoute';
 
+const router = createBrowserRouter([
+  { path: '/', element: <SplashScreen /> },
+  { path: '/LoginScreen', element: <LoginScreen /> },
+  { path: '/SignUpScreen', element: <SignUpScreen /> },
+  {
+    path: '/HomeScreen',
+    element: (
+      <ProtectedRoute>
+        <HomeScreen />
+      </ProtectedRoute>
+    ),
+  },
+]);
 
-import {createBrowserRouter, RouterProvider} from "react-router-dom";
-import SplashScreen from "./Screens/SplashScreen";
-import LoginScreen from "./Screens/LoginScreen";
-import HomeScreen from "./Screens/HomeScreen";
-
-const router = createBrowserRouter([ 
-{path: "/", element: <SplashScreen />},
-{path: "/LoginScreen", element:<LoginScreen /> },
-{path: "/HomeScreen", element:<HomeScreen />}]);
-
-function createSplashScreen(){
-
-return(<RouterProvider router={router}/>);
+function App() {
+  return (
+    <AuthProvider>
+      <RouterProvider router={router} />
+    </AuthProvider>
+  );
 }
 
-export default createSplashScreen;
-
+export default App;
