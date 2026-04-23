@@ -1,6 +1,6 @@
 import {Link} from "react-router-dom";
 import {RouterProvider} from "react-router-dom";
-import {HomeScreen} from "./HomeScreen";
+import HomeScreen from "./HomeScreen";
 
 function checkInfo(){
 			let userName = "", password = "", valid = false;

@@ -1,0 +1,327 @@
+/* ─── HomeScreen ─────────────────────────────────────────────────────────── */
+
+.home-screen {
+  justify-content: flex-start;
+  gap: var(--space-5);
+}
+
+/* Hero */
+.home-hero {
+  margin-bottom: var(--space-2);
+}
+
+/* Game type (opens modify modal) */
+.home-game-type {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  cursor: pointer;
+}
+
+.home-game-type-top {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.home-settings-icon {
+  font-size: var(--text-lg);
+  color: var(--color-accent);
+  line-height: 1;
+}
+
+.home-game-subtitle {
+  color: var(--color-text);
+  font-family: var(--font-family);
+  font-size: var(--text-lg);
+  font-weight: var(--font-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Lobby row */
+.home-lobby-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.home-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-icon);
+}
+
+.home-avatar--filled {
+  background-color: var(--color-icon);
+  /* swap for a real avatar image later */
+}
+
+.home-add-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--text-xl);
+  font-weight: var(--font-bold);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  padding: 0;
+  margin: 0;
+}
+
+/* Search button */
+.home-search-btn {
+  margin-top: var(--space-2);
+}
+
+/* Profile icon — bottom right corner */
+.home-profile-btn {
+  position: absolute;
+  bottom: var(--space-8);
+  right: var(--space-6);
+  background: none;
+  border: none;
+  color: var(--color-text);
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  border-radius: 0;
+}
+
+/* ─── Overlay ────────────────────────────────────────────────────────────── */
+
+.home-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--color-overlay);
+  z-index: 10;
+}
+
+/* ─── Modal shared ───────────────────────────────────────────────────────── */
+
+.home-modal {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: calc(100% - var(--space-12));
+  max-width: 360px;
+  background: var(--color-modal-bg);
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.home-modal-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.home-modal-close {
+  margin-left: auto;
+  background: none;
+  border: none;
+  font-size: var(--text-lg);
+  cursor: pointer;
+  color: var(--color-modal-text);
+  padding: 0;
+  margin-right: 0;
+  border-radius: 0;
+}
+
+/* ─── Invite modal ───────────────────────────────────────────────────────── */
+
+.home-modal-search-icon {
+  font-size: var(--text-base);
+  color: var(--color-modal-text);
+}
+
+.home-modal-search {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-family: var(--font-family);
+  font-size: var(--text-base);
+  color: var(--color-modal-text);
+  background: transparent;
+}
+
+.home-friend-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.home-friend-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.home-friend-name {
+  font-family: var(--font-family);
+  font-size: var(--text-base);
+  font-weight: var(--font-bold);
+  color: var(--color-modal-text);
+}
+
+.home-invite-btn {
+  padding: var(--space-1) var(--space-4);
+  border-radius: var(--radius-full);
+  border: none;
+  background: var(--color-icon);
+  color: var(--color-modal-text);
+  font-family: var(--font-family);
+  font-size: var(--text-sm);
+  font-weight: var(--font-bold);
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+.home-invite-btn--invited {
+  background: transparent;
+  color: var(--color-accent);
+  border: 1px solid var(--color-accent);
+}
+
+/* ─── Modify Game modal ──────────────────────────────────────────────────── */
+
+.home-modal-title {
+  font-family: var(--font-family);
+  font-size: var(--text-xl);
+  font-weight: var(--font-black);
+  color: var(--color-modal-text);
+  text-transform: uppercase;
+}
+
+.home-modal-menu {
+  margin-left: auto;
+  font-size: var(--text-xl);
+  color: var(--color-modal-text);
+  cursor: pointer;
+}
+
+.home-mode-row {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.home-mode-btn {
+  background: none;
+  border: none;
+  font-family: var(--font-family);
+  font-size: var(--text-base);
+  font-weight: var(--font-bold);
+  color: var(--color-modal-text);
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 0;
+  opacity: 0.4;
+}
+
+.home-mode-btn--active {
+  color: var(--color-accent);
+  opacity: 1;
+}
+
+.home-size-row {
+  display: flex;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.home-size-btn {
+  background: none;
+  border: none;
+  font-family: var(--font-family);
+  font-size: var(--text-base);
+  font-weight: var(--font-bold);
+  color: var(--color-modal-text);
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  text-transform: uppercase;
+  border-radius: 0;
+}
+
+.home-size-btn--active {
+  color: var(--color-accent);
+}
+
+.home-size-btn--locked {
+  color: var(--color-disabled);
+  cursor: not-allowed;
+  /* muted — 5v5 not available yet */
+}
+
+.home-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--space-2);
+}
+
+.home-ball-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-family: var(--font-family);
+  font-size: var(--text-base);
+  font-weight: var(--font-bold);
+  color: var(--color-modal-text);
+  text-transform: uppercase;
+}
+
+.home-checkbox {
+  width: 28px;
+  height: 28px;
+  border: 2px solid var(--color-modal-text);
+  border-radius: var(--radius-sm);
+  background: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: var(--text-sm);
+  font-weight: var(--font-bold);
+  color: var(--color-modal-text);
+  padding: 0;
+  margin: 0;
+}
+
+.home-checkbox--checked {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-bg);
+}
+
+.home-done-btn {
+  background: none;
+  border: none;
+  font-family: var(--font-family);
+  font-size: var(--text-base);
+  font-weight: var(--font-bold);
+  color: var(--color-modal-text);
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  letter-spacing: 0.05em;
+  border-radius: 0;
+}
