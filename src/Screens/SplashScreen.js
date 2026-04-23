@@ -9,7 +9,7 @@ return(<>
 	</div>
 
 	<div>
-		<Link to="/SignUpScreen"><button>Create Profile</button></Link>
+		<Link to="/ProfileCreationScreen"><button>Create Profile</button></Link>
 		<Link to="/LoginScreen"><button>Login</button></Link>
 
 	</div>
