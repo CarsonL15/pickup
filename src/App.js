@@ -5,6 +5,7 @@ import LoginScreen from './Screens/LoginScreen';
 import SignUpScreen from './Screens/SignUpScreen';
 import HomeScreen from './Screens/HomeScreen';
 import ProtectedRoute from './components/ProtectedRoute';
+import ProfileScreen from './Screens/ProfileScreen';
 
 const router = createBrowserRouter([
   { path: '/', element: <SplashScreen /> },
@@ -15,6 +16,14 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <HomeScreen />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/ProfileScreen',
+    element: (
+      <ProtectedRoute>
+        <ProfileScreen />
       </ProtectedRoute>
     ),
   },
