@@ -44,6 +44,9 @@ class Game:
             return False
         return True
 
+    def TeamCanJoinCompetitve(self,team):
+        return
+
 
 
     def playerCanJoinCasual(self,player):
@@ -53,6 +56,8 @@ class Game:
             return False
         return True
 
+
+
     def playerCanJoinCompetitive(self,player):
         if self.isActive or self.parkID not in player.parkPriority or player.skillRating != 0:  # if the game has started or the park is not in the players range or comp player in casual
             return False
@@ -61,6 +66,8 @@ class Game:
         if player.skillRating < self.skillFloor or player.skillRating > self.skillCeiling:
             return False
         return True
+
+
 
 
     def addPlayerToCasual(self,player):
@@ -77,6 +84,8 @@ class Game:
             self.isActive = True
 
         player.foundParkID = self.gameID
+
+
 
     def addPlayerToCompetitve(self,player,initialPlayer = False):
         self.currentPlayers += 1
@@ -104,3 +113,5 @@ class Game:
             self.isActive = True
 
         player.foundParkID = self.gameID
+
+

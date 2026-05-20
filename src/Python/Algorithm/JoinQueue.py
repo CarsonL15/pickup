@@ -1,5 +1,7 @@
 from Python.Algorithm.Game import Game
 from Python.Algorithm.Player import Player
+from Python.Algorithm.Team import Team
+
 
 class JoinQueue:
     joinCasualParkQueue : list[Player] = []
@@ -8,7 +10,7 @@ class JoinQueue:
 
     gamesCreated : list[Game]= []
     playersJoined : list[Player] = []
-    
+
     gamesFinished : list[Game]
 
 
@@ -20,6 +22,7 @@ class JoinQueue:
                 the longitude of the player
                 the number of opponents, eg 5v5 would be 5, 3v3 would be 3, any would be -1
                 the skill of the player
+                the distance Preference of the player
                 
                 In the select statement exclude all that have a partyID that's not null
 
@@ -48,12 +51,15 @@ class JoinQueue:
         # TEAMS QUEUE
         joinTeamGamesQueueRequest = "SELECT" """we want info on players joining games, this includes 
 
-                        the latitude of the player, average of group if friend queueing
-                        the longitude of the player, average of group if friend queueing
-                        the number of opponents, eg 5v5 would be 5, 3v3 would be 3, any would be -1
-                        the skill of the player or combined total of the group
-                        the ID of the party they are joining
-
+                the id of the player
+                the latitude of the player
+                the longitude of the player
+                the number of opponents, eg 5v5 would be 5, 3v3 would be 3, any would be -1
+                the skill of the player
+                the distance Preference of the player
+                the party/team ID of the player
+                
+                In the select statement exclude all that have a partyID that's null
                         
 
                         """
@@ -61,15 +67,23 @@ class JoinQueue:
         joinGamesQueueResponse = ""
 
         casualGames = {}
-        competitveGames = {}
+        competitiveGames = {}
 
         joinCompetitiveTeamsParkQueue = []
         joinCasualTeamsParkQueue = []
 
         for x in range(len(joinGamesQueueResponse)):
-            if joinGamesQueueResponse[11] not in casualGames.keys():
-                casualGames[joinGamesQueueResponse[11]] = [Player()]
+                # this should be the isTeam section     #this is the Party/Team ID
+            if joinGamesQueueResponse[12] == False and joinGamesQueueResponse[11] not in casualGames.keys():
+                casualGames[joinGamesQueueResponse[11]] = [Team()]
+            elif joinGamesQueueResponse[11] not in competitiveGames.keys():
+                competitiveGames[joinGamesQueueResponse[11]] = [Team()]
+            elif joinGamesQueueResponse[12] == True and joinGamesQueueResponse[11] in competitiveGames.keys():
+                competitiveGames[joinGamesQueueResponse[11]].addPlayer()
+            else:
+                casualGames[joinGamesQueueResponse[11]].addPlayer()
 
+            
 
     def updateDatabase(self):
 

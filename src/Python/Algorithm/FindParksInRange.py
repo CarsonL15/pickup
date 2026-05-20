@@ -56,7 +56,8 @@ def calculateTravelTimes(validParks,player):
     orderedParks.sort()
 
     for park in orderedParks:
-        priorityList.append(park[1])
+        if(park[0] != -1):
+            priorityList.append(park[1])
 
 
     return priorityList

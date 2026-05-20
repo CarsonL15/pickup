@@ -21,11 +21,12 @@ class Player:
 
     distancePreference = None
 
-    def __init__(self, playerID, lat, long, numVS, skill):
+    def __init__(self, playerID, lat, long, numVS, skill,distancePreferance):
         self.id = playerID
         self.lat = lat
         self.long = long
         self.numVS = numVS
         self.skill = skill
+        self.distancePreference = distancePreferance
 
 
