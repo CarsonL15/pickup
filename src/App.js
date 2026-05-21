@@ -4,6 +4,7 @@ import SplashScreen from './Screens/SplashScreen';
 import LoginScreen from './Screens/LoginScreen';
 import SignUpScreen from './Screens/SignUpScreen';
 import HomeScreen from './Screens/HomeScreen';
+import RatingScreen from './Screens/RatingScreen';
 import ProtectedRoute from './components/ProtectedRoute';
 
 const router = createBrowserRouter([
@@ -15,6 +16,14 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <HomeScreen />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/RatingScreen',
+    element: (
+      <ProtectedRoute>
+        <RatingScreen />
       </ProtectedRoute>
     ),
   },
