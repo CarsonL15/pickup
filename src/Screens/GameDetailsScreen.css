@@ -1,0 +1,150 @@
+.gd-screen {
+  height: 100svh;
+  overflow: hidden;
+  justify-content: space-between;
+  align-items: center;
+  text-align: center;
+  padding-bottom: 88px;
+}
+
+/* ── Title ── */
+.gd-title {
+  font-size: var(--text-hero);
+  font-weight: var(--font-black);
+  line-height: 0.88;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+  text-transform: uppercase;
+  margin: 0;
+  padding-top: var(--space-10);
+  width: 100%;
+  text-align: left;
+}
+
+/* ── Teams / Players ── */
+.gd-teams {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-4);
+  width: 100%;
+}
+
+.gd-team-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.gd-team-label {
+  font-size: var(--text-lg);
+  font-weight: var(--font-black);
+  color: var(--color-text);
+  letter-spacing: 0.05em;
+}
+
+.gd-circles-row {
+  display: flex;
+  justify-content: flex-start;
+  gap: var(--space-4);
+}
+
+.gd-circles-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: var(--space-4);
+  max-width: 320px;
+}
+
+/* ── Player circle ── */
+.gd-circle {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-full);
+  background: var(--color-icon);
+  flex-shrink: 0;
+}
+
+.gd-circle.reporter {
+  background: var(--color-reporter);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gd-circle-label {
+  font-family: var(--font-family);
+  font-size: var(--text-lg);
+  font-weight: var(--font-black);
+  color: var(--color-text);
+  line-height: 1;
+}
+
+.gd-circle.ball {
+  background: var(--color-ball);
+}
+
+/* ── Location / Time ── */
+.gd-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.gd-location {
+  font-size: var(--text-xl);
+  font-weight: var(--font-black);
+  color: var(--color-text);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.gd-time {
+  font-size: var(--text-3xl);
+  font-weight: var(--font-black);
+  color: var(--color-accent);
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+/* ── Leave button (casual only) ── */
+.gd-leave-btn {
+  background: none;
+  border: none;
+  color: var(--color-text);
+  font-family: var(--font-family);
+  font-size: var(--text-xl);
+  font-weight: var(--font-black);
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* ── Bottom nav ── */
+.gd-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 430px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: var(--space-4) var(--page-padding-x);
+  background-color: var(--color-bg);
+}
+
+.gd-bottom-nav button {
+  background: none;
+  border: none;
+  color: var(--color-text);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+}
