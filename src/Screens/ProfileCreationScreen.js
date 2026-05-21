@@ -88,7 +88,7 @@ function ProfileCreationScreen() {
     setIsLoading(true);
 
     // Create Supabase Auth account
-    const { error: authError } = await supabase.auth.signUp({
+    const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
     });
@@ -106,6 +106,7 @@ function ProfileCreationScreen() {
         username: username.trim(),
         email,
         display_name: displayName.trim() || null,
+        auth_id: authData.user.id,
       });
 
     if (insertError) {
