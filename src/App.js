@@ -26,6 +26,10 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <GameDetailsScreen />
+      </ProtectedRoute>
+    ),
+  },
+  {
     path: '/ProfileScreen',
     element: (
       <ProtectedRoute>
