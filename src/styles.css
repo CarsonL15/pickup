@@ -34,6 +34,58 @@ body {
   position: relative;
 }
 
+.nav-bar{
+  position: fixed;        /* sticks it to top */
+  top: 10px;
+  left: 0;
+  width: 100%;
+
+  display: flex;
+  justify-content: center; /* center links */
+  gap: 40px;
+
+  padding: 15px 0;
+  background-color: var(--color-surface);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  z-index: 1000;
+  border-radius: 20px;
+}
+
+.about-screen {
+  
+  max-width: 430px;
+  min-height: 100svh;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  padding: var(--page-padding-y) var(--page-padding-x);
+  background-color: var(--color-surface);
+  position: relative;
+  border-radius: 15px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.start-screen {
+	max-width: 430px;
+	min-height: 100svh;
+	margin: 0 auto;
+	display: flex;
+	flex-direction: column;
+	padding: var(--page-padding-y) var(--page-padding-x);
+	background-color: var(--color-bg);
+	position: relative;
+	justify-content: center;
+	align-items: center;
+}
+
+  .center-content {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 /* ─── Typography helpers ────────────────────────────────────────────────────── */
 
 .text-hero {
@@ -49,6 +101,59 @@ body {
   font-weight: var(--font-bold);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+.text-title {
+
+  color: var(--color-accent);
+  font-weight: var(--font-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  align-items: center;
+}
+
+.text-feature {
+  /*color: var(--color-accent); */
+  color: white;
+  font-weight: var(--font-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  align-items: center;
+  font-size: --text-lg;
+
+}
+
+.text-question {
+
+  color: white;
+  font-weight: var(--font-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: var(--text-base);
+}
+
+.text-featureInfo{
+  font-size: var(--text-xxs);
+  color: white;
+  font-weight: var(--font-bold);
+}
+.text-info {
+
+  color: white;
+  font-weight: var(--font-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: var(--text-sm);
+  flex: 1;
+  display: flex;
+
+  justify-content: center; 
+  align-items: center;    
+
+  text-align: center;
+
+  
+
+
 }
 
 /* ─── Button ────────────────────────────────────────────────────────────────── */
@@ -83,6 +188,51 @@ body {
   background-color: var(--color-accent);
   color: var(--color-bg);
 }
+
+.start-button{
+
+  position: absolute;
+  top: 100%;         
+  left: 50%;
+  transform: translateX(-50%);
+  
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 500px;
+}
+
+.bubble-container{
+  display: flex;
+  flex-direction: column; 
+  align-items: center; 
+  gap: 20px; 
+  padding: 20px;
+}
+.bubble-feature{
+  position: relative; 
+  background: #00263F;
+  color: white;
+  padding: 15px 20px;
+  border-radius: 20px;
+  width: 370px;
+  height: 100px; 
+}
+
+.bubble {
+  position: relative; 
+  background: #00263F;
+  color: white;
+  padding: 15px 20px;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;  
+  justify-content: flex-start; 
+  align-items: flex-start;
+  width: 400px;
+  height: 500px;
+}
+
 
 /* ─── Legacy screen styles (kept while old screens are updated) ─────────────── */
 
@@ -153,3 +303,59 @@ button {
   padding: var(--page-padding-x);
   z-index: 100;
 }
+
+.circle-container{
+	position: relative;
+	width: 450px;
+	height: 450px;
+}
+
+svg{
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	transform-origin: center;
+}
+
+@keyframes rotate{
+	from{
+		transform: rotate(0deg);
+	}
+	to{
+		transform: rotate(360deg);
+	}
+}
+
+.image-container{
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	width: 300px;
+	height: 300px;
+	border-radius: 50%;
+	overflow: hidden;
+	border: 2px solid rgb(242, 232, 36);
+}
+
+.image-container img{
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.curved-text {
+	fill: var(--color-text);
+	font-size: 10px;
+	font-family: var(--font-family);
+	letter-spacing: 2px;
+	text-transform: uppercase;
+  }
+
+  .rotation{
+	animation: rotate 20s linear infinite;
+	transform-origin: 50% 50%;
+  }
+
