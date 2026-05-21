@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabaseClient';
 import ManageFriendsModal from '../components/ManageFriendsModal';
+import ManageTeamsModal from '../components/ManageTeamsModal';
 import './ProfileScreen.css';
 
 // ─── Supabase integration points ─────────────────────────────────────────────
@@ -26,21 +27,21 @@ import './ProfileScreen.css';
 //
 // 3. Friends:
 //    const { data } = await supabase
-//      .from('friends')
+//      .from('friendship')
 //      .select('friend_id, app_user!friend_id(username, is_online)')
 //      .eq('user_id', user.id);
 //
 // 4. Ratings:
 //    const { data } = await supabase
 //      .from('ratings')
-//      .select('skill, sportsmanship')
+//      .select('skill, sportsmanship, rank, next_rank, games_to_next')
 //      .eq('user_id', user.id)
 //      .single();
 //
 // 5. Teams:
 //    const { data } = await supabase
 //      .from('team_members')
-//      .select('team:teams(name, wins, losses)')
+//      .select('team:teams(id, name, wins, losses)')
 //      .eq('user_id', user.id);
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -49,6 +50,7 @@ function ProfileScreen() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(null);
   const [showFriendsModal, setShowFriendsModal] = useState(false);
+  const [showTeamsModal, setShowTeamsModal] = useState(false);
 
   const [profile, setProfile] = useState(null);
   const [record, setRecord] = useState(null);
@@ -58,7 +60,7 @@ function ProfileScreen() {
 
   useEffect(() => {
     if (!user) return;
-    // Wire up Supabase fetches here
+    // TODO: wire up Supabase fetches when tables are ready
   }, [user]);
 
   function toggle(section) {
@@ -83,6 +85,7 @@ function ProfileScreen() {
 
       <div className="profile-sections">
 
+        {/* RECORD */}
         <div className="profile-section" onClick={() => toggle('record')}>
           <div className="profile-section-row">
             <span className="profile-section-label">RECORD</span>
@@ -93,7 +96,12 @@ function ProfileScreen() {
           {open === 'record' && (
             <div className="profile-section-body">
               {record?.recentGames?.map((g, i) => (
-                <p key={i}>{g.played_at} {g.result}</p>
+                <div className="profile-game-row" key={i}>
+                  <span className="profile-game-date">{g.played_at}</span>
+                  <span className={`profile-game-result ${g.result === 'WIN' ? 'win' : 'loss'}`}>
+                    {g.result}
+                  </span>
+                </div>
               ))}
               <button className="profile-action-link" onClick={e => { e.stopPropagation(); navigate('/StatsScreen'); }}>
                 ALL STATS
@@ -102,17 +110,20 @@ function ProfileScreen() {
           )}
         </div>
 
+        {/* FRIENDS */}
         <div className="profile-section" onClick={() => toggle('friends')}>
           <div className="profile-section-row">
             <span className="profile-section-label">FRIENDS</span>
             <span className="profile-section-value">
-              {friends ? `${onlineFriends} ONLINE` : ''}
+              {friends && onlineFriends > 0 ? `${onlineFriends} ONLINE` : ''}
             </span>
           </div>
           {open === 'friends' && (
             <div className="profile-section-body">
               {friends?.map(f => (
-                <p key={f.id}>@{f.username}{f.is_online ? '*' : ''}</p>
+                <span key={f.id} className="profile-friend-name">
+                  @{f.username}{f.is_online ? '*' : ''}
+                </span>
               ))}
               <button className="profile-action-link" onClick={e => { e.stopPropagation(); setShowFriendsModal(true); }}>
                 MANAGE
@@ -121,6 +132,7 @@ function ProfileScreen() {
           )}
         </div>
 
+        {/* RATINGS */}
         <div className="profile-section" onClick={() => toggle('ratings')}>
           <div className="profile-section-row">
             <span className="profile-section-label">RATINGS</span>
@@ -132,8 +144,10 @@ function ProfileScreen() {
             <div className="profile-section-body">
               {ratings && (
                 <>
-                  <p>{profile?.rank?.toUpperCase()} ({ratings.skill})</p>
-                  <p>SPORTSMANSHIP: {ratings.sportsmanship}</p>
+                  <span className="profile-rating-rank">
+                    {ratings.rank?.toUpperCase()} ({ratings.skill}) &rarr; {ratings.games_to_next} TO {ratings.next_rank?.toUpperCase()}
+                  </span>
+                  <span className="profile-rating-sport">SPORTSMANSHIP: {ratings.sportsmanship}</span>
                 </>
               )}
               <button className="profile-action-link" onClick={e => e.stopPropagation()}>
@@ -143,7 +157,8 @@ function ProfileScreen() {
           )}
         </div>
 
-        <div className="profile-section" onClick={() => toggle('teams')}>
+        {/* TEAMS */}
+        <div className="profile-section profile-section--last" onClick={() => toggle('teams')}>
           <div className="profile-section-row">
             <span className="profile-section-label">TEAMS</span>
             <span className="profile-section-value"></span>
@@ -151,9 +166,11 @@ function ProfileScreen() {
           {open === 'teams' && (
             <div className="profile-section-body">
               {teams?.map((t, i) => (
-                <p key={i}>{t.name} {t.wins}-{t.losses}</p>
+                <span key={i} className="profile-team-name">
+                  {t.name.toUpperCase()} {t.wins}-{t.losses}
+                </span>
               ))}
-              <button className="profile-action-link" onClick={e => { e.stopPropagation(); navigate('/TeamsScreen'); }}>
+              <button className="profile-action-link" onClick={e => { e.stopPropagation(); setShowTeamsModal(true); }}>
                 MANAGE
               </button>
             </div>
@@ -168,15 +185,19 @@ function ProfileScreen() {
         <ManageFriendsModal onClose={() => setShowFriendsModal(false)} />
       )}
 
+      {showTeamsModal && (
+        <ManageTeamsModal onClose={() => setShowTeamsModal(false)} />
+      )}
+
       <div className="profile-bottom-nav">
         <button aria-label="Home" onClick={() => navigate('/HomeScreen')}>
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
             <polyline points="9 22 9 12 15 12 15 22" />
           </svg>
         </button>
         <button aria-label="Profile">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
             <circle cx="12" cy="7" r="4" />
           </svg>
