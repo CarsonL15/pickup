@@ -1,6 +1,6 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import SplashScreen from './Screens/SplashScreen';
+import LandingPage from './Screens/LandingPage';
 import LoginScreen from './Screens/LoginScreen';
 import ProfileCreationScreen from './Screens/ProfileCreationScreen';
 import HomeScreen from './Screens/HomeScreen';
@@ -10,7 +10,7 @@ import RatingScreen from './Screens/RatingScreen';
 import ProtectedRoute from './components/ProtectedRoute';
 
 const router = createBrowserRouter([
-  { path: '/', element: <SplashScreen /> },
+  { path: '/', element: <LandingPage /> },
   { path: '/LoginScreen', element: <LoginScreen /> },
   { path: '/ProfileCreationScreen', element: <ProfileCreationScreen /> },
   {
