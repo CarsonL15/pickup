@@ -88,7 +88,7 @@ function ProfileCreationScreen() {
     setIsLoading(true);
 
     // Create Supabase Auth account
-    const { error: authError } = await supabase.auth.signUp({
+    const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
     });
@@ -99,10 +99,17 @@ function ProfileCreationScreen() {
       return;
     }
 
-    // Insert app_user record
+    if (!authData?.user?.id) {
+      setError('Sign-up succeeded but no user was returned. If email confirmation is enabled in Supabase, finish creating your profile after clicking the confirmation link.');
+      setIsLoading(false);
+      return;
+    }
+
+    // Insert app_user record, linking back to the auth.users row via auth_id
     const { error: insertError } = await supabase
       .from('app_user')
       .insert({
+        auth_id: authData.user.id,
         username: username.trim(),
         email,
         display_name: displayName.trim() || null,
