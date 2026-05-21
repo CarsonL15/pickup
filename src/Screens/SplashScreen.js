@@ -34,9 +34,9 @@ return(
 			<img src={image} alt="Center Image" />
 		</div>
 
-		<div className='start-button'> 
+		<div className='start-button'>
 		<div className='btn'>
-		<button>Create Profile</button>
+		<Link to="/ProfileCreationScreen"><button>Create Profile</button></Link>
 		<Link to="/LoginScreen"><button>Login</button></Link>
 		</div>		
 	</div>
