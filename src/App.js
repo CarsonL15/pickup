@@ -4,6 +4,7 @@ import SplashScreen from './Screens/SplashScreen';
 import LoginScreen from './Screens/LoginScreen';
 import ProfileCreationScreen from './Screens/ProfileCreationScreen';
 import HomeScreen from './Screens/HomeScreen';
+import ProfileScreen from './Screens/ProfileScreen';
 import RatingScreen from './Screens/RatingScreen';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -16,6 +17,14 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <HomeScreen />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/ProfileScreen',
+    element: (
+      <ProtectedRoute>
+        <ProfileScreen />
       </ProtectedRoute>
     ),
   },
