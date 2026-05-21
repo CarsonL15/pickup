@@ -4,8 +4,10 @@ import SplashScreen from './Screens/SplashScreen';
 import LoginScreen from './Screens/LoginScreen';
 import SignUpScreen from './Screens/SignUpScreen';
 import HomeScreen from './Screens/HomeScreen';
-import ProtectedRoute from './components/ProtectedRoute';
 import ProfileScreen from './Screens/ProfileScreen';
+import GameDetailsScreen from './Screens/GameDetailsScreen';
+import RatingScreen from './Screens/RatingScreen';
+import ProtectedRoute from './components/ProtectedRoute';
 
 const router = createBrowserRouter([
   { path: '/', element: <SplashScreen /> },
@@ -24,6 +26,22 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <ProfileScreen />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/GameDetailsScreen',
+    element: (
+      <ProtectedRoute>
+        <GameDetailsScreen />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/RatingScreen',
+    element: (
+      <ProtectedRoute>
+        <RatingScreen />
       </ProtectedRoute>
     ),
   },
