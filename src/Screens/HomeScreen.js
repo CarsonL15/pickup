@@ -41,7 +41,7 @@ function HomeScreen() {
   const invitedIds = invitedPlayers.map(p => p.id);
 
   return (
-    <div className="home-screen">
+    <div className="screen home-screen">
       <div className="home-content">
 
         <h1 className="hero-title">

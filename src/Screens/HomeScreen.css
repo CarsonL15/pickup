@@ -1,11 +1,5 @@
 .home-screen {
-  min-height: 100dvh;
-  background: var(--color-bg);
-  display: flex;
-  flex-direction: column;
-  padding: var(--page-padding-y) var(--page-padding-x);
-  font-family: var(--font-family);
-  color: var(--color-text);
+  padding-bottom: 72px;
 }
 
 .home-content {
@@ -132,9 +126,17 @@
 
 /* ── Bottom nav ── */
 .bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 430px;
   display: flex;
   justify-content: flex-end;
-  padding: var(--space-4) 0 var(--space-2) 0;
+  align-items: center;
+  padding: var(--space-4) var(--page-padding-x);
+  background-color: var(--color-bg);
 }
 
 .profile-btn {
