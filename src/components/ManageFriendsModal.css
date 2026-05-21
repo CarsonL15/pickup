@@ -178,3 +178,15 @@
   cursor: pointer;
   padding: 0;
 }
+
+.mf-error {
+  color: #ff6b6b;
+  font-size: var(--text-xs);
+  margin: var(--space-1) 0 0;
+}
+
+.mf-empty {
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  margin: var(--space-2) 0;
+}

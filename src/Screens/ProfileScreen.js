@@ -62,8 +62,8 @@ function ProfileScreen() {
     if (!user) return;
     supabase
       .from('app_user')
-      .select('username, display_name')
-      .eq('user_id', user.id)
+      .select('username, display_name, user_id')
+      .eq('auth_id', user.id)
       .single()
       .then(({ data }) => { if (data) setProfile(data); });
   }, [user]);

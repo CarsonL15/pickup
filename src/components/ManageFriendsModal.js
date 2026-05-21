@@ -1,78 +1,117 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { supabase } from '../supabaseClient';
 import './ManageFriendsModal.css';
-
-// ─── Supabase integration points ─────────────────────────────────────────────
-// Confirmed tables: friendship, app_user (user_id, username, email, display_name)
-// Pending tables (need creating): friend_requests
-//
-// 1. Fetch friends:
-//    const { data } = await supabase
-//      .from('friendship')
-//      .select('friend_id, app_user!friend_id(username)')
-//      .eq('user_id', user.id);
-//    setFriends(data.map(r => ({ id: r.friend_id, username: r.app_user.username })));
-//
-// 2. Fetch pending invites:
-//    const { data } = await supabase
-//      .from('friend_requests')
-//      .select('id, sender_id, app_user!sender_id(username)')
-//      .eq('receiver_id', user.id)
-//      .eq('status', 'pending');
-//    setPending(data.map(r => ({ id: r.id, senderId: r.sender_id, username: r.app_user.username })));
-//
-// 3. Delete friend:
-//    await supabase.from('friendship')
-//      .delete().eq('user_id', user.id).eq('friend_id', friendId);
-//
-// 4. Send friend request:
-//    const { data: target } = await supabase
-//      .from('app_user').select('user_id').eq('username', username).single();
-//    await supabase.from('friend_requests')
-//      .insert({ sender_id: user.id, receiver_id: target.user_id });
-//
-// 5. Accept invite:
-//    await supabase.from('friend_requests')
-//      .update({ status: 'accepted' }).eq('id', requestId);
-//    await supabase.from('friendship')
-//      .insert([{ user_id: user.id, friend_id: senderId }, { user_id: senderId, friend_id: user.id }]);
-//
-// 6. Decline invite:
-//    await supabase.from('friend_requests')
-//      .update({ status: 'declined' }).eq('id', requestId);
-// ─────────────────────────────────────────────────────────────────────────────
 
 function ManageFriendsModal({ onClose }) {
   const { user } = useAuth();
+  const [myUserId, setMyUserId] = useState(null);
   const [friends, setFriends] = useState([]);
   const [pending, setPending] = useState([]);
   const [adding, setAdding] = useState(false);
   const [addUsername, setAddUsername] = useState('');
+  const [addError, setAddError] = useState('');
+
+  const loadData = useCallback(async (userId) => {
+    const [friendsRes, pendingRes] = await Promise.all([
+      supabase
+        .from('friendship')
+        .select('friendship_id, requester_id, receiver_id, app_user!friendship_receiver_id_fkey(user_id, username), app_user!friendship_requester_id_fkey(user_id, username)')
+        .or(`requester_id.eq.${userId},receiver_id.eq.${userId}`)
+        .eq('status', 'accepted'),
+      supabase
+        .from('friendship')
+        .select('friendship_id, requester_id, app_user!friendship_requester_id_fkey(username)')
+        .eq('receiver_id', userId)
+        .eq('status', 'pending'),
+    ]);
+
+    if (friendsRes.data) {
+      setFriends(friendsRes.data.map(r => {
+        const isRequester = r.requester_id === userId;
+        const friend = isRequester
+          ? r['app_user!friendship_receiver_id_fkey']
+          : r['app_user!friendship_requester_id_fkey'];
+        return { id: r.friendship_id, friendUserId: friend?.user_id, username: friend?.username };
+      }));
+    }
+
+    if (pendingRes.data) {
+      setPending(pendingRes.data.map(r => ({
+        id: r.friendship_id,
+        senderId: r.requester_id,
+        username: r['app_user!friendship_requester_id_fkey']?.username,
+      })));
+    }
+  }, []);
 
   useEffect(() => {
     if (!user) return;
-    // Wire up Supabase queries here
-  }, [user]);
+    supabase
+      .from('app_user')
+      .select('user_id')
+      .eq('auth_id', user.id)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          setMyUserId(data.user_id);
+          loadData(data.user_id);
+        }
+      });
+  }, [user, loadData]);
 
-  function handleDelete(id) {
-    // supabase: DELETE FROM friends WHERE user_id = user.id AND friend_id = id
-    setFriends(prev => prev.filter(f => f.id !== id));
+  async function handleDelete(friendshipId) {
+    await supabase.from('friendship').delete().eq('friendship_id', friendshipId);
+    setFriends(prev => prev.filter(f => f.id !== friendshipId));
   }
 
-  function handleSendRequest() {
+  async function handleSendRequest() {
     if (!addUsername.trim()) return;
-    // supabase: look up user by username, then INSERT into friend_requests
+    setAddError('');
+
+    const { data: target } = await supabase
+      .from('app_user')
+      .select('user_id')
+      .eq('username', addUsername.trim())
+      .single();
+
+    if (!target) {
+      setAddError('User not found.');
+      return;
+    }
+
+    if (target.user_id === myUserId) {
+      setAddError("You can't add yourself.");
+      return;
+    }
+
+    const { error } = await supabase
+      .from('friendship')
+      .insert({ requester_id: myUserId, receiver_id: target.user_id, status: 'pending' });
+
+    if (error) {
+      setAddError('Request already sent or you are already friends.');
+      return;
+    }
+
     setAdding(false);
     setAddUsername('');
   }
 
-  function handleAccept(requestId) {
-    // supabase: UPDATE friend_requests SET status = 'accepted', then INSERT into friends
+  async function handleAccept(requestId, senderId) {
+    await supabase
+      .from('friendship')
+      .update({ status: 'accepted' })
+      .eq('friendship_id', requestId);
     setPending(prev => prev.filter(p => p.id !== requestId));
+    loadData(myUserId);
   }
 
-  function handleDecline(requestId) {
-    // supabase: UPDATE friend_requests SET status = 'declined'
+  async function handleDecline(requestId) {
+    await supabase
+      .from('friendship')
+      .update({ status: 'declined' })
+      .eq('friendship_id', requestId);
     setPending(prev => prev.filter(p => p.id !== requestId));
   }
 
@@ -101,7 +140,7 @@ function ManageFriendsModal({ onClose }) {
                 type="text"
                 placeholder="@USERNAME"
                 value={addUsername}
-                onChange={e => setAddUsername(e.target.value)}
+                onChange={e => { setAddUsername(e.target.value); setAddError(''); }}
                 onKeyDown={e => e.key === 'Enter' && handleSendRequest()}
                 autoFocus
               />
@@ -112,15 +151,17 @@ function ManageFriendsModal({ onClose }) {
               + (ADD FRIEND)
             </button>
           )}
+          {addError && <p className="mf-error">{addError}</p>}
         </div>
 
         <div className="mf-bottom">
           <p className="mf-pending-title">PENDING INVITES</p>
+          {pending.length === 0 && <p className="mf-empty">No pending requests</p>}
           {pending.map(p => (
             <div className="mf-pending-row" key={p.id}>
               <span className="mf-pending-name">@{p.username}</span>
               <div className="mf-pending-actions">
-                <button className="mf-accept-btn" onClick={() => handleAccept(p.id)}>ACCEPT</button>
+                <button className="mf-accept-btn" onClick={() => handleAccept(p.id, p.senderId)}>ACCEPT</button>
                 <button className="mf-decline-btn" onClick={() => handleDecline(p.id)}>DECLINE</button>
               </div>
             </div>
