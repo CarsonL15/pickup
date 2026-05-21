@@ -5,6 +5,7 @@ import LoginScreen from './Screens/LoginScreen';
 import SignUpScreen from './Screens/SignUpScreen';
 import HomeScreen from './Screens/HomeScreen';
 import GameDetailsScreen from './Screens/GameDetailsScreen';
+import RatingScreen from './Screens/RatingScreen';
 import ProtectedRoute from './components/ProtectedRoute';
 
 const router = createBrowserRouter([
@@ -24,6 +25,14 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <GameDetailsScreen />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/RatingScreen',
+    element: (
+      <ProtectedRoute>
+        <RatingScreen />
       </ProtectedRoute>
     ),
   },
