@@ -36,6 +36,7 @@ def main():
 
 
         Matchmake.casual(GamesList.activeCasualGames, JoinQueue.joinCasualParkQueue)
+        Matchmake.competitive(GamesList.activeCompGames, JoinQueue.joinCompetitiveParkQueue)
         time.sleep(10)
 
 
