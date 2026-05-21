@@ -84,7 +84,6 @@
 .format-btn.disabled {
   color: var(--color-disabled);
   cursor: not-allowed;
-  text-decoration: line-through;
 }
 
 /* ── Footer ── */
