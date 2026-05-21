@@ -1,0 +1,159 @@
+.home-screen {
+  padding-bottom: 72px;
+}
+
+.home-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding-top: var(--space-10);
+  padding-bottom: var(--space-6);
+}
+
+/* ── Hero ── */
+.hero-title {
+  font-size: var(--text-hero);
+  font-weight: var(--font-black);
+  line-height: 0.88;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+  text-transform: uppercase;
+  margin: 0 0 var(--space-4) 0;
+}
+
+/* ── Mode selector ── */
+.mode-section {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: var(--space-8);
+}
+
+.mode-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.mode-label {
+  font-size: var(--text-xl);
+  font-weight: var(--font-black);
+  color: var(--color-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.settings-btn {
+  background: none;
+  border: none;
+  color: var(--color-text);
+  font-size: var(--text-lg);
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  opacity: 0.85;
+}
+
+.mode-sub {
+  font-size: var(--text-xl);
+  font-weight: var(--font-black);
+  color: var(--color-text);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+/* ── Player slots ── */
+.player-slots {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-8);
+}
+
+.slot {
+  width: 62px;
+  height: 62px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+.slot.avatar {
+  background: var(--color-icon);
+}
+
+.slot.avatar.empty {
+  background: transparent;
+  border: 2px dashed rgba(255, 255, 255, 0.25);
+}
+
+.slot.add-slot {
+  background: var(--color-surface);
+  border: none;
+  color: var(--color-text);
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* ── Search button ── */
+.search-btn {
+  width: 100%;
+  padding: var(--space-5) 0;
+  background: var(--color-surface);
+  border: none;
+  border-radius: var(--radius-lg);
+  color: var(--color-text);
+  font-family: var(--font-family);
+  font-size: var(--text-base);
+  font-weight: var(--font-black);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+}
+
+.search-btn:active {
+  opacity: 0.8;
+}
+
+/* ── Bottom nav ── */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 430px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: var(--space-4) var(--page-padding-x);
+  background-color: var(--color-bg);
+}
+
+.profile-btn {
+  background: none;
+  border: none;
+  color: var(--color-text);
+  cursor: pointer;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.9;
+}
+
+.profile-btn svg {
+  width: 100%;
+  height: 100%;
+}
