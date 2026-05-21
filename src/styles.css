@@ -310,7 +310,7 @@ button {
 	height: 450px;
 }
 
-svg{
+.circle-container svg{
 	position: absolute;
 	top: 0;
 	left: 0;
