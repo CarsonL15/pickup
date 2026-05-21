@@ -60,7 +60,12 @@ function ProfileScreen() {
 
   useEffect(() => {
     if (!user) return;
-    // TODO: wire up Supabase fetches when tables are ready
+    supabase
+      .from('app_user')
+      .select('username, display_name')
+      .eq('user_id', user.id)
+      .single()
+      .then(({ data }) => { if (data) setProfile(data); });
   }, [user]);
 
   function toggle(section) {
@@ -72,7 +77,7 @@ function ProfileScreen() {
     navigate('/');
   }
 
-  const username = profile?.username ?? user?.email?.split('@')[0] ?? '';
+  const username = profile?.display_name || profile?.username || user?.email?.split('@')[0] || '';
   const onlineFriends = friends?.filter(f => f.is_online).length ?? 0;
 
   return (
