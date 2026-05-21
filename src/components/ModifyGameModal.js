@@ -33,21 +33,15 @@ function ModifyGameModal({ settings, onClose, onDone }) {
         </div>
 
         <div className="format-row">
-          {FORMATS.map(f => {
-            const disabled = f === '5V5';
-            const active = format === f;
-            return (
-              <button
-                key={f}
-                className={`format-btn ${active ? 'active' : ''} ${disabled ? 'disabled' : ''}`}
-                onClick={() => !disabled && update('format', f)}
-                disabled={disabled}
-                aria-label={disabled ? `${f} — coming soon` : f}
-              >
-                {f}
-              </button>
-            );
-          })}
+          {FORMATS.map(f => (
+            <button
+              key={f}
+              className={`format-btn ${format === f ? 'active' : ''}`}
+              onClick={() => update('format', f)}
+            >
+              {f}
+            </button>
+          ))}
         </div>
 
         <div className="modify-footer">
