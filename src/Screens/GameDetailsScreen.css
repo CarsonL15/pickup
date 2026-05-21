@@ -55,7 +55,7 @@
   flex-wrap: wrap;
   justify-content: flex-start;
   gap: var(--space-4);
-  max-width: 320px;
+  max-width: 340px;
 }
 
 /* ── Player circle ── */
@@ -84,6 +84,9 @@
 
 .gd-circle.ball {
   background: var(--color-ball);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* ── Location / Time ── */

@@ -66,6 +66,7 @@ function PlayerCircle({ isReporter, hasBall, mode }) {
   return (
     <div className={`gd-circle ${variant}`}>
       {variant === 'reporter' && <span className="gd-circle-label">C</span>}
+      {variant === 'ball' && <span className="gd-circle-label">B</span>}
     </div>
   );
 }
@@ -75,7 +76,7 @@ function GameDetailsScreen() {
   const navigate = useNavigate();
 
   // Use real game data when passed from matchmaking, fall back to mock for dev
-  const game = state?.game ?? MOCK_COMPETITIVE;
+  const game = state?.game ?? MOCK_CASUAL;
 
   const isCompetitive = game.mode === 'competitive';
 
