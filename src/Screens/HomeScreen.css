@@ -12,7 +12,9 @@
   flex: 1;
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
   padding-top: var(--space-10);
+  padding-bottom: var(--space-6);
 }
 
 /* ── Hero ── */
@@ -73,6 +75,7 @@
 /* ── Player slots ── */
 .player-slots {
   display: flex;
+  align-items: center;
   gap: var(--space-3);
   margin-bottom: var(--space-8);
 }
@@ -86,6 +89,11 @@
 
 .slot.avatar {
   background: var(--color-icon);
+}
+
+.slot.avatar.empty {
+  background: transparent;
+  border: 2px dashed rgba(255, 255, 255, 0.25);
 }
 
 .slot.add-slot {
@@ -126,7 +134,7 @@
 .bottom-nav {
   display: flex;
   justify-content: flex-end;
-  padding-top: var(--space-5);
+  padding: var(--space-4) 0 var(--space-2) 0;
 }
 
 .profile-btn {
@@ -134,12 +142,13 @@
   border: none;
   color: var(--color-text);
   cursor: pointer;
-  width: 28px;
-  height: 28px;
+  width: 44px;
+  height: 44px;
   padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  opacity: 0.9;
 }
 
 .profile-btn svg {

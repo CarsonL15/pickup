@@ -1,25 +1,6 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import './LobbyInviteModal.css';
-
-// ─── Supabase integration point ──────────────────────────────────────────────
-// Replace MOCK_FRIENDS with a real fetch once you have DB access:
-//
-//   const { data, error } = await supabase
-//     .from('friends')
-//     .select('friend_id, app_user!friend_id(username)')
-//     .eq('user_id', user.id);
-//
-// Expected shape: [{ id, username }]
-// ─────────────────────────────────────────────────────────────────────────────
-
-const MOCK_FRIENDS = [
-  { id: '1', username: 'warren' },
-  { id: '2', username: 'jake' },
-  { id: '3', username: 'nicolle' },
-  { id: '4', username: 'carson' },
-];
 
 function LobbyInviteModal({ onClose, onInvite, invitedIds = [] }) {
   const { user } = useAuth();
@@ -30,16 +11,12 @@ function LobbyInviteModal({ onClose, onInvite, invitedIds = [] }) {
   useEffect(() => {
     async function fetchFriends() {
       setLoading(true);
-
-      // ── Swap this block for the real Supabase query when ready ──
+      // TODO: wire up once friends table is ready
       // const { data, error } = await supabase
       //   .from('friends')
       //   .select('friend_id, app_user!friend_id(username)')
       //   .eq('user_id', user.id);
       // if (!error) setFriends(data.map(r => ({ id: r.friend_id, username: r.app_user.username })));
-      // ────────────────────────────────────────────────────────────
-
-      setFriends(MOCK_FRIENDS);
       setLoading(false);
     }
 

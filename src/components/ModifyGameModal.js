@@ -15,13 +15,6 @@ function ModifyGameModal({ settings, onClose, onDone }) {
 
         <div className="modify-header">
           <span className="modify-title">BASKETBALL</span>
-          <button className="hamburger-btn" aria-label="More options">
-            <svg width="18" height="14" viewBox="0 0 18 14" fill="currentColor">
-              <rect width="18" height="2" rx="1" />
-              <rect y="6" width="18" height="2" rx="1" />
-              <rect y="12" width="18" height="2" rx="1" />
-            </svg>
-          </button>
         </div>
 
         <div className="mode-toggle">

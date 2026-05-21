@@ -25,6 +25,19 @@ function HomeScreen() {
     setInvitedPlayers(prev => [...prev, friend]);
   }
 
+  function handleSearch() {
+    const lobbyPayload = {
+      hostId: user.id,
+      mode: gameSettings.mode,       // 'competitive' | 'casual'
+      format: gameSettings.format,   // '1V1' | '2V2' | '3V3' | '4V4'
+      haveBall: gameSettings.haveBall,
+      partyIds: [user.id, ...invitedPlayers.map(p => p.id)],
+    };
+    // TODO: pass lobbyPayload to the matchmaking algorithm
+    // e.g. casualAlgorithm(lobbyPayload) or competitiveAlgorithm(lobbyPayload)
+    console.log('[SEARCH] lobby payload:', lobbyPayload);
+  }
+
   const invitedIds = invitedPlayers.map(p => p.id);
 
   return (
@@ -64,7 +77,7 @@ function HomeScreen() {
           </button>
         </div>
 
-        <button className="search-btn">SEARCH</button>
+        <button className="search-btn" onClick={handleSearch}>SEARCH</button>
 
       </div>
 
