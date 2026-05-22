@@ -114,4 +114,22 @@ class Game:
 
         player.foundParkID = self.gameID
 
+    def removePlayerFromCasual(self,player):
+        if(player not in self.players):
+            return False
+        else:
+            self.currentPlayers -= 1
+            self.players.remove(player)
 
+            if(player.teamSide == 1):
+                self.team1Players -= 1
+            else:
+                self.team2Players -= 1
+        return True
+
+    def removePlayerFromCompetitive(self,player):
+        if(self.removePlayerFromCasual(player)):
+            if (player.teamSide == 1):
+                self.team1Skill -= player.skillRating
+            else:
+                self.team2Skill -= player.skillRating

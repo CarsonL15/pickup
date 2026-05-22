@@ -1,4 +1,7 @@
 from Python.Algorithm import main
+from Python.Algorithm.Game import Game
+from Python.Algorithm.JoinQueue import JoinQueue
+from Python.Algorithm.JoinQueue import JoinQueue
 
 
 def updateQueue(gamesList):
@@ -11,10 +14,15 @@ def updateQueue(gamesList):
                 if player.queueCycles > 10:
 
                     player.urgentGameNeeded = True
-                    game.currentPlayers -= 1
 
-                    game.players.remove(player)
-                    main.joinParkQueue.append(player)
+                    if(player.skillRating == 0):
+                        game.removePlayerFromCasual(player)
+                        JoinQueue.joinCasualParkQueue.append(player)
+                    else:
+                        game.removePlayerFromCompetitive(player)
+                        JoinQueue.joinCompetitiveParkQueue.append(player)
+
+
 
                     if game.currentPlayers == 0:
                         main.activeGames.remove(game)
