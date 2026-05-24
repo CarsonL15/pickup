@@ -6,6 +6,7 @@ from Python.Algorithm.FindParksInRange import FindParksInRange
 from Python.Algorithm.Player import Player
 from Python.Algorithm.JoinQueue import JoinQueue
 from Python.Algorithm.GamesList import GamesList
+from Python.Algorithm.UpdateQueue import updateQueue
 
 
 def main():
@@ -22,6 +23,7 @@ def main():
     while True:
 
         mainQueue.refreshQueues()
+        updateQueue(gameList)
 
 
         for player in JoinQueue.joinCasualParkQueue:
@@ -32,11 +34,20 @@ def main():
             player.parkPriority = FindParksInRange(player)
             player.potentialGameIndex = [None] * len(player.parkPriority)
 
+        for team in JoinQueue.joinCasualTeamsParkQueue:
+            team.parkPriority = FindParksInRange(team)
+            team.potentialGameIndex = [None] * len(team.parkPriority)
 
+        for team in JoinQueue.joinCompetitiveTeamsParkQueue:
+            team.parkPriority = FindParksInRange(team)
+            team.potentialGameIndex = [None] * len(team.parkPriority)
 
 
         Matchmake.casual(GamesList.activeCasualGames, JoinQueue.joinCasualParkQueue)
         Matchmake.competitive(GamesList.activeCompGames, JoinQueue.joinCompetitiveParkQueue)
+        Matchmake.teamCasual(GamesList.activeCasualGames,JoinQueue.joinCasualTeamsParkQueue)
+        Matchmake.teamCompetitive(GamesList.activeCompGames,JoinQueue.joinCompetitiveTeamsParkQueue)
+
         time.sleep(10)
 
 

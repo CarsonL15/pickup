@@ -1,5 +1,6 @@
 from Python.Algorithm.GamesList import GamesList
 from Python.Algorithm.Player import Player
+from Python.Algorithm.Team import Team
 
 
 class Game:
@@ -9,7 +10,8 @@ class Game:
     maxPlayers = 0
 
     parkID = 0
-    players = []
+    players : list[Player] = []
+    teams : list[Team] = []
 
     team1Players = 0
     team2Players = 0
@@ -37,15 +39,21 @@ class Game:
         self.isCasual = isCasual
 
 
-    def TeamCanJoinCasual(self,team):
-        if team.teamSize + self.currentPlayers > self.maxPlayers:  # if the players would exceed the max if this player(s) joined
+    def teamCanJoinCasual(self,team):
+        if self.isActive or team.teamSize + self.currentPlayers > self.maxPlayers:  # if the players would exceed the max if this player(s) joined
             return False
         if self.maxPlayers / 2 - self.team1Players < team.teamSize and self.maxPlayers / 2 - self.team2Players < team.teamSize:  # this checks whether both sides have enough people
             return False
         return True
 
-    def TeamCanJoinCompetitve(self,team):
-        return
+    def teamCanJoinCompetitive(self,team):
+        if self.isActive or team.teamSize != self.maxPlayers / 2:  # if the players would exceed the max if this player(s) joined
+            return False
+        if self.team1Players != 0 and self.team2Players != 0:  # this checks whether both sides have enough people
+            return False
+        if team.skillRating / team.teamSize < self.skillFloor or team.skillRating / team.teamSize > self.skillCeiling:
+            return False
+        return True
 
 
 
@@ -71,6 +79,9 @@ class Game:
 
 
     def addPlayerToCasual(self,player):
+        if self.currentPlayers == 0: # means this game has just been created
+            self.maxPlayers = player.numVS * 2
+
         self.currentPlayers += 1
         if self.team1Players < self.maxPlayers / 2:
             self.team1Players += 1
@@ -87,13 +98,18 @@ class Game:
 
 
 
-    def addPlayerToCompetitve(self,player,initialPlayer = False):
+    def addPlayerToCompetitive(self,player,initialPlayer = False):
         self.currentPlayers += 1
 
         if initialPlayer:
             self.skillFloor = player.skillRating - 100
             self.skillCeiling = player.skillRating + 100
             self.team1Players += 1
+            if player.numVS == -1:
+                self.maxPlayers = 5
+            else:
+                self.maxPlayers = player.numVS
+
         else:
 
             team1Adv = (self.team1Skill / self.team1Players > self.team2Skill / self.team2Players)
@@ -113,6 +129,42 @@ class Game:
             self.isActive = True
 
         player.foundParkID = self.gameID
+
+    def addTeamToCasual(self,team):
+        if self.currentPlayers == 0:
+            self.maxPlayers = team.numVS
+
+
+        self.currentPlayers += team.teamSize
+        if self.team1Players < self.maxPlayers / 2:
+            self.team1Players += team.teamSize
+            team.teamSide = 1
+        else:
+            self.team2Players += team.teamSize
+            team.teamSide = 2
+
+        self.teams.append(team)
+        if self.currentPlayers == self.maxPlayers:
+            self.isActive = True
+
+        team.foundParkID = self.gameID
+
+    def addTeamToCompetitive(self,team,initialPlayer = False):
+        self.currentPlayers += team.teamSize
+
+        if initialPlayer:
+            self.skillFloor = (team.skillRating / team.teamSize) - 100
+            self.skillCeiling = (team.skillRating / team.teamSize) + 100
+            self.team1Players += team.teamSize
+            self.maxPlayers = team.numVS
+        else:
+            self.team2Players += team.teamSize
+
+        self.teams.append(team)
+        if self.currentPlayers == self.maxPlayers:
+            self.isActive = True
+
+        team.foundParkID = self.gameID
 
     def removePlayerFromCasual(self,player):
         if(player not in self.players):

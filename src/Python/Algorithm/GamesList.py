@@ -1,7 +1,6 @@
 class GamesList:
     activeCasualGames = []
     activeCompGames = []
-    activeTeamGames = []
     GLOBALGAMEID = -1
 
     def getGLOBALGAMEID(self):
