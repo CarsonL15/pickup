@@ -1,14 +1,16 @@
 from Python.Algorithm.Game import Game
+from Python.Algorithm.GamesList import GamesList
 from Python.Algorithm.JoinQueue import JoinQueue
 from Python.Algorithm.JoinQueue import JoinQueue
 from Python.Algorithm.Player import Player
 
+@staticmethod
+def updateQueue():
 
-def updateQueue(gamesList):
-    for game in gamesList:
+    for game in GamesList.activeCasualGames:
         if not game.isActive:
             for player in game.players:
-                if player.skillRating != 0:
+                if player.skillRating == 0:
 
                     player.queueCycles += 1
 
@@ -26,6 +28,6 @@ def updateQueue(gamesList):
 
 
                         if game.currentPlayers == 0:
-                            gamesList.activeGames.remove(game)
+                            GamesList.activeCasualGames.remove(game)
 
-    return gamesList
+    return GamesList.activeCasualGames

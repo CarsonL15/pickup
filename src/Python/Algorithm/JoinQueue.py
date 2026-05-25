@@ -1,3 +1,5 @@
+import random
+
 from Python.Algorithm.Game import Game
 from Python.Algorithm.Player import Player
 from Python.Algorithm.Team import Team
@@ -12,11 +14,23 @@ class JoinQueue:
     gamesCreated : list[Game]= []
     playersJoined : list[Player] = []
     teamsJoined : list[Team] = []
+    gamesStarted = []
 
     gamesFinished : list[Game]
 
+    playersJoiningList = []
 
-    def refreshQueues(self):
+    @staticmethod
+    def addPlayer():
+        #JoinQueue.playersJoiningList.append(Player(len(JoinQueue.playersJoiningList),random.random() + 47,random.random() - 118,random.randint(2,5),0,50))
+        JoinQueue.playersJoiningList.append(Player(0, 47, -118, 2,0,50))
+        JoinQueue.playersJoiningList.append(Player(1, 47, -118, 2, 0, 50))
+        JoinQueue.playersJoiningList.append(Player(2, 47, -118, 2, 0, 50))
+        JoinQueue.playersJoiningList.append(Player(3, 47, -118, 2, 0, 50))
+        JoinQueue.playersJoiningList.append(Player(3, 47, -118, 2, 0, 50))
+
+    @staticmethod
+    def refreshQueues():
         joinGamesQueueRequest = "SELECT" """we want info on players joining games, this includes 
 
                 the id of the player
@@ -32,21 +46,21 @@ class JoinQueue:
 
         joinGamesQueueResponse = ""
 
-        self.joinCasualParkQueue = []
-        self.joinCompetitiveParkQueue = []
+        JoinQueue.joinCasualParkQueue = []
+        JoinQueue.joinCompetitiveParkQueue = []
 
 
 
         for x in range(len(joinGamesQueueResponse)):
-            if (self.joinCasualParkQueue[10] != "casual"):  # if the game type is competitive
-                self.joinCompetitiveParkQueue.append(Player(joinGamesQueueResponse[5], joinGamesQueueResponse[6],
+            if (JoinQueue.joinCasualParkQueue[10] != "casual"):  # if the game type is competitive
+                JoinQueue.joinCompetitiveParkQueue.append(Player(joinGamesQueueResponse[5], joinGamesQueueResponse[6],
                                                        # THESE lines will change when we find out what supabase returns in JSON
                                                        joinGamesQueueResponse[7], joinGamesQueueResponse[8],
-                                                       joinGamesQueueResponse[11]))
+                                                       joinGamesQueueResponse[11],50))
             else:
-                self.joinCasualParkQueue.append(Player(joinGamesQueueResponse[5], joinGamesQueueResponse[6],
+                JoinQueue.joinCasualParkQueue.append(Player(joinGamesQueueResponse[5], joinGamesQueueResponse[6],
                                                   joinGamesQueueResponse[7], joinGamesQueueResponse[8],
-                                                  0))  # THESE lines will change when we find out what supabase returns in JSON
+                                                  0,50))  # THESE lines will change when we find out what supabase returns in JSON
 
 
 
@@ -71,8 +85,8 @@ class JoinQueue:
         casualGames = {}
         competitiveGames = {}
 
-        self.joinCompetitiveTeamsParkQueue = []
-        joinCasualTeamsParkQueue = []
+        JoinQueue.joinCompetitiveTeamsParkQueue = []
+        JoinQueue.joinCasualTeamsParkQueue = []
 
         for x in range(len(joinGamesQueueResponse)):
                 # this should be the isTeam section     #this is the Party/Team ID
@@ -84,15 +98,18 @@ class JoinQueue:
                 competitiveGames[joinGamesQueueResponse[11]].addPlayer("""""")
             else:
                 casualGames[joinGamesQueueResponse[11]].addPlayer("""""")
+        for player in JoinQueue.playersJoiningList:
+            JoinQueue.joinCasualParkQueue.append(player)
+        JoinQueue.playersJoiningList = []
 
+    @staticmethod
+    def updateDatabase():
 
-
-    def updateDatabase(self):
-
-        updateGamesRequest = "Insert Into Games"
+        updateGamesRequest = "Insert Into game"
         updatePlayerRequest = "Insert Into Game_player"
+        updateGamesStartedRequest = "Insert Into game"
 
-        for game in self.gamesCreated:
+        for game in JoinQueue.gamesCreated:
 
             """
             
@@ -104,7 +121,7 @@ class JoinQueue:
             
             """
 
-        for player in self.playersJoined:
+        for player in JoinQueue.playersJoined:
             """
 
             player.foundParkID -> game_id
@@ -114,7 +131,7 @@ class JoinQueue:
 
             """
 
-        for team in self.teamsJoined:
+        for team in JoinQueue.teamsJoined:
             for playersID in team.playersID:
                 """
                 team.foundParkID -> game_id
@@ -124,26 +141,26 @@ class JoinQueue:
             
                 """
 
-        self.joinCasualParkQueue.append(Player(1,47.66556,-117.23652,2,0,50))
+        for game in JoinQueue.gamesStarted:
+            print(f"game id is {game.gameID}")
+            """
+            update where game.gameID == game_id
+            status is now active
+
+            """
 
 
-    def emptyQueues(self):
+
+    @staticmethod
+    def emptyQueues():
         removePlayerRequest = ""
 
-        for player in self.joinCasualParkQueue:
+        for player in JoinQueue.playersJoined:
             """
                 remove player.id from QueueEntry
             """
-        for player in self.joinCompetitiveParkQueue:
-            """
-                remove player.id from QueueEntry
-            """
-        for team in self.joinCasualTeamsParkQueue:
-            for playersID in team.playersID:
-                """
-                    remove playersID from QueueEntry
-                """
-        for team in self.joinCompetitiveTeamsParkQueue:
+
+        for team in JoinQueue.teamsJoined:
             for playersID in team.playersID:
                 """
                     remove playersID from QueueEntry

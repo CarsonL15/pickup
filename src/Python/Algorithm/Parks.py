@@ -1,10 +1,6 @@
 class Park:
-    id = None
-    lat = None
-    long = None
 
-
-    def __init__(self,lat,long):
-        self.id = 0
+    def __init__(self, parkID, lat, long):
+        self.id = parkID
         self.lat = lat
         self.long = long

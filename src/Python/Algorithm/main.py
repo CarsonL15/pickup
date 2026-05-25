@@ -15,32 +15,32 @@ def main():
     # parksList = []
     # parksList.append(Park(47.626419,-117.420181))
     # validParks = calculateTravelTimes(parksList,p1)
+    i = 0
 
-    mainQueue = JoinQueue()
-    gameList = GamesList()
+
 
 
     while True:
-
-        mainQueue.refreshQueues()
-        updateQueue(gameList)
+        JoinQueue.addPlayer()
+        JoinQueue.refreshQueues()
+        updateQueue()
 
 
         for player in JoinQueue.joinCasualParkQueue:
             player.parkPriority = FindParksInRange(player)
-            player.potentialGameIndex = [None] * len(player.parkPriority)
+            player.potentialGameIndex = [-1] * len(player.parkPriority)
 
         for player in JoinQueue.joinCompetitiveParkQueue:
             player.parkPriority = FindParksInRange(player)
-            player.potentialGameIndex = [None] * len(player.parkPriority)
+            player.potentialGameIndex = [-1] * len(player.parkPriority)
 
         for team in JoinQueue.joinCasualTeamsParkQueue:
             team.parkPriority = FindParksInRange(team)
-            team.potentialGameIndex = [None] * len(team.parkPriority)
+            team.potentialGameIndex = [-1] * len(team.parkPriority)
 
         for team in JoinQueue.joinCompetitiveTeamsParkQueue:
             team.parkPriority = FindParksInRange(team)
-            team.potentialGameIndex = [None] * len(team.parkPriority)
+            team.potentialGameIndex = [-1] * len(team.parkPriority)
 
 
         Matchmake.casual(GamesList.activeCasualGames, JoinQueue.joinCasualParkQueue)
@@ -48,7 +48,14 @@ def main():
         Matchmake.teamCasual(GamesList.activeCasualGames,JoinQueue.joinCasualTeamsParkQueue)
         Matchmake.teamCompetitive(GamesList.activeCompGames,JoinQueue.joinCompetitiveTeamsParkQueue)
 
-        time.sleep(10)
+        JoinQueue.updateDatabase()
+        JoinQueue.emptyQueues()
+   #     time.sleep(1)
+
+        i += 1
+
+        if i == 1:
+            print("1 players joined")
 
 
 

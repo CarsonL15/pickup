@@ -8,13 +8,7 @@ from Python.Algorithm.Team import Team
 def casual(activeGames : list[Game],joiningPlayers : list[Player]):
 
 
-    i = 0
 
-    for game in activeGames:
-        for player in joiningPlayers:
-            if game.playerCanJoinCasual(player):
-                player.potentialGameIndex[player.parkPriority.index(game.parkID)] = i # sets the corresponding list that this park has a game
-                i += 1
 
 
 
@@ -23,13 +17,23 @@ def casual(activeGames : list[Game],joiningPlayers : list[Player]):
 
 
     for player in joiningPlayers:
-        if player.potentialGameIndex.count(None) < len(player.potentialGameIndex): # if there is a game within range
+
+        i = 0
+
+        for game in activeGames:
+            if game.playerCanJoinCasual(player):
+                player.potentialGameIndex[player.parkPriority.index(
+                    game.parkID)] = i  # sets the corresponding list that this park has a game
+                i += 1
+
+
+        if player.potentialGameIndex.count(-1) < len(player.potentialGameIndex): # if there is a game within range
 
             if player.urgentGameNeeded:
                 largest = -1
                 index = -1
                 for x in player.potentialGameIndex:
-                    if x != None:
+                    if x != -1:
                         if activeGames[x].playerCanJoinCasual(player):
                             if activeGames[x].currentPlayers > largest:
                                 largest = activeGames[x].currentPlayers
@@ -39,14 +43,16 @@ def casual(activeGames : list[Game],joiningPlayers : list[Player]):
 
             else:
                 for x in player.potentialGameIndex:
-                    if x != None:
+                    if x != -1:
                         if activeGames[x].playerCanJoinCasual(player):
                             activeGames[x].addPlayerToCasual(player)
+                            if activeGames[x].isActive:
+                                JoinQueue.gamesStarted.append(Game(0,0,0,False))
                             JoinQueue.playersJoined.append(player)
                         break
 
         else:   # create a new game at the specified park
-            newGame = Game(GamesList.GLOBALGAMEID(),player.parkPriority[0],player.numVS * 2,True)
+            newGame = Game(GamesList.getGLOBALGAMEID(),player.parkPriority[0],player.numVS * 2,True)
             newGame.addPlayerToCasual(player)
             activeGames.append(newGame)
 
@@ -55,29 +61,36 @@ def casual(activeGames : list[Game],joiningPlayers : list[Player]):
 
 
 def competitive(activeGames : list[Game],joiningPlayers : list[Player]):
-    i = 0
 
-    for game in activeGames:
-        for player in joiningPlayers:
-            if game.playerCanJoinCompetitive(player):
-                player.potentialGameIndex[player.parkPriority.index(game.parkID)] = i  # sets the corresponding list that this park has a game
-                i += 1
 
 
 
     for player in joiningPlayers:
-        if player.potentialGameIndex.count(None) < len(player.potentialGameIndex): # if there is a game within range
+
+        i = 0
+
+        for game in activeGames:
+            if game.playerCanJoinCompetitive(player):
+                player.potentialGameIndex[player.parkPriority.index(
+                    game.parkID)] = i  # sets the corresponding list that this park has a game
+                i += 1
+
+
+
+        if player.potentialGameIndex.count(-1) < len(player.potentialGameIndex): # if there is a game within range
 
 
             for x in player.potentialGameIndex:
-                if x != None:
+                if x != -1:
                     if activeGames[x].playerCanJoinCompetitive(player):
                         activeGames[x].addPlayerToCompetitive(player)
+                        if activeGames[x].isActive:
+                            JoinQueue.gamesStarted.append(activeGames[x])
                         JoinQueue.playersJoined.append(player)
                     break
 
         else:   # create a new game at the specified park
-            newGame = Game(GamesList.GLOBALGAMEID(),player.parkPriority[0],player.numVS * 2,False)
+            newGame = Game(GamesList.getGLOBALGAMEID(),player.parkPriority[0],player.numVS * 2,False)
             newGame.addPlayerToCompetitive(player,True)
             activeGames.append(newGame)
 
@@ -86,26 +99,32 @@ def competitive(activeGames : list[Game],joiningPlayers : list[Player]):
 
 
 def teamCasual(activeGames : list[Game] ,joiningTeams : list[Team]):
-    i = 0
-    for game in activeGames:
-        for team in joiningTeams:
-            if game.teamCanJoinCasual(team):
-                team.potentialGameIndex[team.parkPriority.index(game.parkID)] = i # sets the corresponding list that this park has a game
-                i += 1
+
 
     for team in joiningTeams:
-        if team.potentialGameIndex.count(None) < len(team.potentialGameIndex): # if there is a game within range
+
+        i = 0
+        for game in activeGames:
+            if game.teamCanJoinCasual(team):
+                team.potentialGameIndex[team.parkPriority.index(
+                    game.parkID)] = i  # sets the corresponding list that this park has a game
+                i += 1
+
+
+        if team.potentialGameIndex.count(-1) < len(team.potentialGameIndex): # if there is a game within range
 
 
             for x in team.potentialGameIndex:
-                if x != None:
+                if x != -1:
                     if activeGames[x].teamCanJoinCasual(team):
                         activeGames[x].addTeamToCasual(team)
+                        if activeGames[x].isActive:
+                            JoinQueue.gamesStarted.append(activeGames[x])
                         JoinQueue.teamsJoined.append(team)
                         break
 
         else:   # create a new game at the specified park
-            newGame = Game(GamesList.GLOBALGAMEID(),team.parkPriority[0],team.numVS * 2,True)
+            newGame = Game(GamesList.getGLOBALGAMEID(),team.parkPriority[0],team.numVS * 2,True)
             newGame.addTeamToCasual(team)
             activeGames.append(newGame)
 
@@ -114,26 +133,32 @@ def teamCasual(activeGames : list[Game] ,joiningTeams : list[Team]):
 
 
 def teamCompetitive(activeGames : list[Game] ,joiningTeams : list[Team]):
-    i = 0
-    for game in activeGames:
-        for team in joiningTeams:
-            if game.teamCanJoinCompetitive(team):
-                team.potentialGameIndex[team.parkPriority.index(game.parkID)] = i # sets the corresponding list that this park has a game
-                i += 1
+
 
     for team in joiningTeams:
-        if team.potentialGameIndex.count(None) < len(team.potentialGameIndex): # if there is a game within range
+
+        i = 0
+        for game in activeGames:
+            if game.teamCanJoinCompetitive(team):
+                team.potentialGameIndex[team.parkPriority.index(
+                    game.parkID)] = i  # sets the corresponding list that this park has a game
+                i += 1
+
+
+        if team.potentialGameIndex.count(-1) < len(team.potentialGameIndex): # if there is a game within range
 
 
             for x in team.potentialGameIndex:
-                if x != None:
+                if x != -1:
                     if activeGames[x].teamCanJoinCompetitive(team):
                         activeGames[x].addTeamToCompetitive(team)
+                        if activeGames[x].isActive:
+                            JoinQueue.gamesStarted.append(activeGames[x])
                         JoinQueue.teamsJoined.append(team)
                         break
 
         else:   # create a new game at the specified park
-            newGame = Game(GamesList.GLOBALGAMEID(),team.parkPriority[0],team.numVS * 2,False)
+            newGame = Game(GamesList.getGLOBALGAMEID(),team.parkPriority[0],team.numVS * 2,False)
             newGame.addTeamToCompetitive(team,True)
             activeGames.append(newGame)
 

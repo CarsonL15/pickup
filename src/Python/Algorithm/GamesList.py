@@ -3,6 +3,7 @@ class GamesList:
     activeCompGames = []
     GLOBALGAMEID = -1
 
-    def getGLOBALGAMEID(self):
-        self.GLOBALGAMEID += 1
-        return self.GLOBALGAMEID
+    @staticmethod
+    def getGLOBALGAMEID():
+        GamesList.GLOBALGAMEID += 1
+        return GamesList.GLOBALGAMEID
