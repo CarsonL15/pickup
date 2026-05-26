@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { supabase } from '../supabaseClient';
 import './LobbyInviteModal.css';
 
 function LobbyInviteModal({ onClose, onInvite, invitedIds = [] }) {
@@ -9,14 +10,32 @@ function LobbyInviteModal({ onClose, onInvite, invitedIds = [] }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!user) return;
+
     async function fetchFriends() {
       setLoading(true);
-      // TODO: wire up once friends table is ready
-      // const { data, error } = await supabase
-      //   .from('friends')
-      //   .select('friend_id, app_user!friend_id(username)')
-      //   .eq('user_id', user.id);
-      // if (!error) setFriends(data.map(r => ({ id: r.friend_id, username: r.app_user.username })));
+
+      const { data: appUser } = await supabase
+        .from('app_user')
+        .select('user_id')
+        .eq('auth_id', user.id)
+        .single();
+
+      if (!appUser) { setLoading(false); return; }
+
+      const { data } = await supabase
+        .from('friendship')
+        .select('requester_id, receiver_id, requester:app_user!friendship_requester_id_fkey(user_id, username), receiver:app_user!friendship_receiver_id_fkey(user_id, username)')
+        .or(`requester_id.eq.${appUser.user_id},receiver_id.eq.${appUser.user_id}`)
+        .eq('status', 'accepted');
+
+      if (data) {
+        setFriends(data.map(r => {
+          const friend = r.requester_id === appUser.user_id ? r.receiver : r.requester;
+          return { id: friend?.user_id, username: friend?.username };
+        }));
+      }
+
       setLoading(false);
     }
 
