@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabaseClient';
@@ -57,6 +57,20 @@ function ProfileScreen() {
   const [friends, setFriends] = useState(null);
   const [ratings, setRatings] = useState(null);
   const [teams, setTeams] = useState(null);
+  const channelRef = useRef(null);
+
+  async function loadFriends(uid) {
+    const { data: rows } = await supabase
+      .from('friendship')
+      .select('friendship_id, requester_id, receiver_id, requester:app_user!friendship_requester_id_fkey(user_id, username), receiver:app_user!friendship_receiver_id_fkey(user_id, username)')
+      .or(`requester_id.eq.${uid},receiver_id.eq.${uid}`)
+      .eq('status', 'accepted');
+    if (!rows) return;
+    setFriends(rows.map(r => {
+      const friend = r.requester_id === uid ? r.receiver : r.requester;
+      return { id: r.friendship_id, username: friend?.username };
+    }));
+  }
 
   useEffect(() => {
     if (!user) return;
@@ -65,7 +79,23 @@ function ProfileScreen() {
       .select('username, display_name, user_id')
       .eq('auth_id', user.id)
       .single()
-      .then(({ data }) => { if (data) setProfile(data); });
+      .then(({ data }) => {
+        if (!data) return;
+        setProfile(data);
+        loadFriends(data.user_id);
+
+        if (channelRef.current) supabase.removeChannel(channelRef.current);
+        channelRef.current = supabase
+          .channel(`friendship-${data.user_id}`)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'friendship' }, () => {
+            loadFriends(data.user_id);
+          })
+          .subscribe();
+      });
+
+    return () => {
+      if (channelRef.current) supabase.removeChannel(channelRef.current);
+    };
   }, [user]);
 
   function toggle(section) {
@@ -119,16 +149,14 @@ function ProfileScreen() {
         <div className="profile-section" onClick={() => toggle('friends')}>
           <div className="profile-section-row">
             <span className="profile-section-label">FRIENDS</span>
-            <span className="profile-section-value">
-              {friends && onlineFriends > 0 ? `${onlineFriends} ONLINE` : ''}
-            </span>
           </div>
           {open === 'friends' && (
             <div className="profile-section-body">
-              {friends?.map(f => (
-                <span key={f.id} className="profile-friend-name">
-                  @{f.username}{f.is_online ? '*' : ''}
-                </span>
+              {friends && friends.length === 0 && (
+                <span className="profile-friend-name">No friends yet</span>
+              )}
+              {friends?.slice(0, 4).map(f => (
+                <span key={f.id} className="profile-friend-name">@{f.username}</span>
               ))}
               <button className="profile-action-link" onClick={e => { e.stopPropagation(); setShowFriendsModal(true); }}>
                 MANAGE
@@ -187,7 +215,7 @@ function ProfileScreen() {
       <button className="profile-logout" onClick={handleLogout}>LOGOUT</button>
 
       {showFriendsModal && (
-        <ManageFriendsModal onClose={() => setShowFriendsModal(false)} />
+        <ManageFriendsModal onClose={() => setShowFriendsModal(false)} myUserId={profile?.user_id} onFriendsChange={() => loadFriends(profile?.user_id)} />
       )}
 
       {showTeamsModal && (
