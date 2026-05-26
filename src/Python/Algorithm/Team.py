@@ -1,15 +1,13 @@
 class Team:
 
-    def __init__(self, id,playersList, lat, long, numVS, skill,distancePreferance):
+    def __init__(self, id,playersID, lat, long, numVS, skill,distancePreferance):
         self.id = id
-        self.playersID = playersList
+        self.playersID = playersID
         self.lat = lat
         self.long = long
         self.numVS = numVS
         self.skillRating = skill
         self.distancePreference = distancePreferance
-
-        self.playersID = []
 
         self.parkPriority = []  # holds the parkID of the parks the user is within range, index 0 is highest subsequent  are less priority
         self.queueCycles = 0  # used to tell if the user has been waiting a long time

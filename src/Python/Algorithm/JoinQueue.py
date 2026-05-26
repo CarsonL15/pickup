@@ -23,11 +23,14 @@ class JoinQueue:
     @staticmethod
     def addPlayer():
         #JoinQueue.playersJoiningList.append(Player(len(JoinQueue.playersJoiningList),random.random() + 47,random.random() - 118,random.randint(2,5),0,50))
-        JoinQueue.playersJoiningList.append(Player(0, 47, -118, 2,0,50))
-        JoinQueue.playersJoiningList.append(Player(1, 47, -118, 2, 0, 50))
-        JoinQueue.playersJoiningList.append(Player(2, 47, -118, 2, 0, 50))
-        JoinQueue.playersJoiningList.append(Player(3, 47, -118, 2, 0, 50))
-        JoinQueue.playersJoiningList.append(Player(3, 47, -118, 2, 0, 50))
+        # JoinQueue.playersJoiningList.append(Player(0, 47, -118, 2,0,50))
+        # JoinQueue.playersJoiningList.append(Player(1, 47, -118, 2, 0, 50))
+        # JoinQueue.playersJoiningList.append(Player(2, 47, -118, 2, 0, 50))
+        # JoinQueue.playersJoiningList.append(Player(3, 47, -118, 2, 0, 50))
+        # JoinQueue.playersJoiningList.append(Player(3, 47, -118, 2, 0, 50))
+        JoinQueue.playersJoiningList.append(Team(0,{0,1,2,3},47,-118,4,0,50))
+        JoinQueue.playersJoiningList.append(Team(0,{4,5,6,7},47,-118,4,0,50))
+
 
     @staticmethod
     def refreshQueues():
@@ -98,8 +101,8 @@ class JoinQueue:
                 competitiveGames[joinGamesQueueResponse[11]].addPlayer("""""")
             else:
                 casualGames[joinGamesQueueResponse[11]].addPlayer("""""")
-        for player in JoinQueue.playersJoiningList:
-            JoinQueue.joinCasualParkQueue.append(player)
+        for team in JoinQueue.playersJoiningList:
+            JoinQueue.joinCasualTeamsParkQueue.append(team)
         JoinQueue.playersJoiningList = []
 
     @staticmethod
