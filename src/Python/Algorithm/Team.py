@@ -14,7 +14,7 @@ class Team:
         self.potentialGameIndex = []  # holds the index of the games in a list the user could potentially be scheduled at
 
         self.teamSide = 0
-        self.teamSize = 0
+        self.teamSize = len(playersID)
         self.foundParkID = 0
 
         self.urgentGameNeeded = False  # true if the user has been waiting a long time

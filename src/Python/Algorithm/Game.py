@@ -46,7 +46,7 @@ class Game:
             return False
         if self.team1Players != 0 and self.team2Players != 0:  # this checks whether both sides have enough people
             return False
-        if team.skillRating / team.teamSize < self.skillFloor or team.skillRating / team.teamSize > self.skillCeiling:
+        if team.skillRating < self.skillFloor or team.skillRating > self.skillCeiling:
             return False
         return True
 
@@ -98,6 +98,7 @@ class Game:
 
 
         if initialPlayer:
+            self.maxPlayers = player.numVS * 2
             self.skillFloor = player.skillRating - 100
             self.skillCeiling = player.skillRating + 100
             self.team1Players += 1
@@ -134,7 +135,7 @@ class Game:
 
     def addTeamToCasual(self,team : Team):
         if self.currentPlayers == 0:
-            self.maxPlayers = team.numVS
+            self.maxPlayers = team.numVS * 2
 
 
         self.currentPlayers += team.teamSize
@@ -156,12 +157,16 @@ class Game:
 
 
         if initialPlayer:
-            self.skillFloor = (team.skillRating / team.teamSize) - 100
-            self.skillCeiling = (team.skillRating / team.teamSize) + 100
+            self.skillFloor = (team.skillRating) - 200
+            self.skillCeiling = (team.skillRating) + 200
             self.team1Players += team.teamSize
-            self.maxPlayers = team.numVS
+            self.maxPlayers = team.numVS * 2
+            self.team1Skill = team.skillRating
+            team.teamSide = 1
         else:
             self.team2Players += team.teamSize
+            self.team2Skill = team.skillRating
+            team.teamSide = 2
 
         self.teams.append(team)
 

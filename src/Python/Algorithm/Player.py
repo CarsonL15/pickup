@@ -9,7 +9,7 @@ class Player:
         self.skillRating = skill
         self.distancePreference = distancePreference
 
-        self.parkPriority = []  # holds the parkID of the parks the user is within range, index 0 is highest subsequent  are less priority
+        self.parkPriority : list[int] = []   # holds the parkID of the parks the user is within range, index 0 is highest subsequent  are less priority
         self.queueCycles = 0  # used to tell if the user has been waiting a long time
         self.potentialGameIndex = []  # holds the index of the games in a list the user could potentially be scheduled at
 

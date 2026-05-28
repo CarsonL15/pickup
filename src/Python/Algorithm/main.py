@@ -25,22 +25,43 @@ def main():
         JoinQueue.refreshQueues()
         updateQueue()
 
-
+        removeList = []
         for player in JoinQueue.joinCasualParkQueue:
             player.parkPriority = FindParksInRange(player)
             player.potentialGameIndex = [-1] * len(player.parkPriority)
+            if not player.parkPriority: #this means list is empty and no parks are in range of the player
+                removeList.append(player)
+        for player in removeList:
+            JoinQueue.joinCasualParkQueue.remove(player)
 
+        removeList = []
         for player in JoinQueue.joinCompetitiveParkQueue:
             player.parkPriority = FindParksInRange(player)
             player.potentialGameIndex = [-1] * len(player.parkPriority)
+            if not player.parkPriority: #this means list is empty and no parks are in range of the player
+                removeList.append(player)
+        for player in removeList:
+            JoinQueue.joinCompetitiveParkQueue.remove(player)
 
+
+        removeList = []
         for team in JoinQueue.joinCasualTeamsParkQueue:
             team.parkPriority = FindParksInRange(team)
             team.potentialGameIndex = [-1] * len(team.parkPriority)
+            if not team.parkPriority: #this means list is empty and no parks are in range of the player
+                removeList.append(team)
+        for team in removeList:
+            JoinQueue.joinCasualTeamsParkQueue.remove(team)
 
+
+        removeList = []
         for team in JoinQueue.joinCompetitiveTeamsParkQueue:
             team.parkPriority = FindParksInRange(team)
             team.potentialGameIndex = [-1] * len(team.parkPriority)
+            if not team.parkPriority: #this means list is empty and no parks are in range of the player
+                removeList.append(team)
+        for team in removeList:
+            JoinQueue.joinCompetitiveTeamsParkQueue.remove(team)
 
 
         Matchmake.casual(GamesList.activeCasualGames, JoinQueue.joinCasualParkQueue)
@@ -53,9 +74,7 @@ def main():
    #     time.sleep(1)
 
         i += 1
-
-        if i == 1:
-            print("1 players joined")
+        print(f"{i} cycles finished")
 
 
 

@@ -47,7 +47,7 @@ def casual(activeGames : list[Game],joiningPlayers : list[Player]):
                         if activeGames[x].playerCanJoinCasual(player):
                             activeGames[x].addPlayerToCasual(player)
                             if activeGames[x].isActive:
-                                JoinQueue.gamesStarted.append(Game(0,0,0,False))
+                                JoinQueue.gamesStarted.append(activeGames[x])
                             JoinQueue.playersJoined.append(player)
                         break
 
