@@ -53,7 +53,7 @@ class Game:
 
 
     def playerCanJoinCasual(self,player):
-        if self.isActive or self.parkID not in player.parkPriority or player.skillRating != 0: # if the game has started or the park is not in the players range or comp player in casual
+        if self.isActive or self.parkID not in player.parkPriority or player.skillRating != None: # if the game has started or the park is not in the players range or comp player in casual
             return False
         if player.numVS != -1 and player.numVS != self.maxPlayers / 2: # if the matchup count is wrong, ex: 4v4 vs 5v5
             return False
@@ -62,7 +62,7 @@ class Game:
 
 
     def playerCanJoinCompetitive(self,player):
-        if self.isActive or self.parkID not in player.parkPriority or player.skillRating == 0:  # if the game has started or the park is not in the players range or comp player in casual
+        if self.isActive or self.parkID not in player.parkPriority or player.skillRating == None:  # if the game has started or the park is not in the players range or comp player in casual
             return False
         if player.numVS != -1 and player.numVS != self.maxPlayers / 2:  # if the matchup count is wrong, ex: 4v4 vs 5v5
             return False

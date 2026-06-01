@@ -26,5 +26,5 @@ class Team:
         self.long = ((self.long * self.teamSize) + long) // (self.teamSize + 1)
         self.teamSize += 1
 
-        if skillRating != 0:
+        if skillRating != None:
             self.skillRating += skillRating

@@ -35,46 +35,22 @@ class JoinQueue:
 
     @staticmethod
     def addPlayer():
+        print()
         #JoinQueue.playersJoiningList.append(Player(len(JoinQueue.playersJoiningList),random.random() + 47,random.random() - 118,random.randint(2,5),0,50))
         # JoinQueue.playersJoiningList.append(Player(0, 47.4, -117.2, 2,0,50))
         # JoinQueue.playersJoiningList.append(Player(1, 47.4, -117.2, 2, 0, 50))
         # JoinQueue.playersJoiningList.append(Player(2, 47.4, -117.2, 2, 0, 50))
         # JoinQueue.playersJoiningList.append(Player(3, 47.4, -117.2, 2, 0, 50))
         # JoinQueue.playersJoiningList.append(Player(3, 47.4, -117.2, 2, 0, 50))
-        JoinQueue.playersJoiningList.append(Team(0,{0,1,2,3},47,-117,4,1500,50))
-        JoinQueue.playersJoiningList.append(Team(0,{4,5,6,7},47,-117,4,1050,50))
+        # JoinQueue.playersJoiningList.append(Team(0,[0,1,2,3],47,-117.225,4,1300,50))
+        # JoinQueue.playersJoiningList.append(Team(1, [4,5,6,7,8], 47, -117, 5, 1600, 50))
+        # JoinQueue.playersJoiningList.append(Team(2, [9,10], 47.9, -117.1, 2, 0, 50))
+        # JoinQueue.playersJoiningList.append(Team(3, [11, 12, 13, 14], 47.1, -117.3, 4, 1150, 50))
 
 
     @staticmethod
     def refreshQueues():
-        joinGamesQueueRequest = "SELECT" """we want info on players joining games, this includes 
 
-                the id of the player
-                the latitude of the player
-                the longitude of the player
-                the number of opponents, eg 5v5 would be 5, 3v3 would be 3, any would be -1
-                the skill of the player
-                the distance Preference of the player
-                
-                In the select statement exclude all that have a partyID that's not null
-
-                """
-
-        # TEAMS QUEUE
-        joinTeamGamesQueueRequest = "SELECT" """we want info on players joining games, this includes 
-
-                the id of the player
-                the latitude of the player
-                the longitude of the player
-                the number of opponents, eg 5v5 would be 5, 3v3 would be 3, any would be -1
-                the skill of the player
-                the distance Preference of the player
-                the party/team ID of the player
-
-                In the select statement exclude all that have a partyID that's null
-
-
-                        """
 
         casualTeams = {}
         competitiveTeams = {}
@@ -94,9 +70,9 @@ class JoinQueue:
         #1. player is single and casual , 2. player is single and comp, 3. player is team not yet created and casual,
         #4. player is team not yet created and comp, 5. player is in created team and casual 6. player is in created team and comp 7. somethings messed up
         for player in joinGamesQueueResponse:
-            if(player['is_casual'] == True and player['party_id'] == 0):
+            if(player['is_casual'] == True and player['party_id'] == None):
                 JoinQueue.joinCasualParkQueue.append(Player(player['player_id'],player['latitude'],player['longitude'],player['num_vs'],player['skill_rating'],player['distance_preference']))
-            elif (player['is_casual'] == False and player['party_id'] == 0):
+            elif (player['is_casual'] == False and player['party_id'] == None):
                 JoinQueue.joinCompetitiveParkQueue.append(Player(player['player_id'], player['latitude'], player['longitude'], player['num_vs'],player['skill_rating'], player['distance_preference']))
             elif(player['is_casual'] == True and player['party_id'] not in casualTeams):
                 casualTeams[player['party_id']] = Team(player['party_id'],[player['player_id']],player['latitude'],player['longitude'],player['num_vs'],player['skill_rating'],player['distance_preference'])
@@ -107,10 +83,10 @@ class JoinQueue:
             elif(player['is_casual'] == False and player['party_id'] in competitiveTeams):
                 competitiveTeams[player['party_id']].addPlayer(player['player_id'], player['latitude'], player['longitude'],player['skill_rating'])
 
-        for team in casualTeams:
+        for team in casualTeams.values():
             JoinQueue.joinCasualTeamsParkQueue.append(team)
 
-        for team in competitiveTeams:
+        for team in competitiveTeams.values():
             JoinQueue.joinCompetitiveTeamsParkQueue.append(team)
 
         for team in JoinQueue.playersJoiningList:
@@ -157,8 +133,8 @@ class JoinQueue:
         #INSERT teams joined
         playerOnTeamJoin = []
         for team in JoinQueue.teamsJoined:
-            for playerID in range(len(team.playersID)):
-                newPlayerOnTeam = {"game_id":team.foundParkID, "user_id" : playerID,"team_side":team.teamSide,"party_id":team.id}
+            for x in range(len(team.playersID)):
+                newPlayerOnTeam = {"game_id":team.foundParkID, "user_id" : team.playersID[x],"team_side":team.teamSide,"party_id":team.id}
                 playerOnTeamJoin.append(newPlayerOnTeam)
 
         if playerOnTeamJoin: # playerOnTeamJoin is not empty
@@ -183,7 +159,7 @@ class JoinQueue:
                     supabase.table("game")
                     .update({"is_active":True})
                     .or_(gamesBegun)
-                    .execute
+                    .execute()
                 )
             except Exception as e:
                 print("could not update is_active value of games")
@@ -193,18 +169,19 @@ class JoinQueue:
     @staticmethod
     def emptyQueues():
 
-        playerRemove = f""
+        playerRemove = []
+        # for player in JoinQueue.playersJoined:
+        #     playerRemove += f"player_id.eq.{player.id},"
+        # playerRemove = playerRemove[:len(playerRemove) - 1]
         for player in JoinQueue.playersJoined:
-            playerRemove += f"player_id.eq.{player.id},"
-        playerRemove = playerRemove[:len(playerRemove) - 1]
-
-        if playerRemove != "":
+            playerRemove.append(player.id)
+        if playerRemove: # not empty
             try:
                 response = (
                     supabase.table("queue_entry")
                     .delete()
-                    .or_(playerRemove)
-                    .execute
+                    .in_("player_id",playerRemove)
+                    .execute()
                 )
             except Exception as e:
                 print("could not remove players from the queue_entry table")
@@ -215,19 +192,19 @@ class JoinQueue:
                     remove playersID from QueueEntry
                 """
 
-        teamRemove = f""
+        teamRemove = []
         for team in JoinQueue.teamsJoined:
             for playerID in team.playersID:
-                teamRemove += f"player_id.eq.{playerID},"
-        teamRemove = teamRemove[:len(teamRemove) - 1]
+                teamRemove.append(playerID)
 
-        if teamRemove != "":
+
+        if teamRemove:
             try:
                 response = (
                     supabase.table("queue_entry")
                     .delete()
-                    .or_(teamRemove)
-                    .execute
+                    .in_("player_id",teamRemove)
+                    .execute()
                 )
             except Exception as e:
                 print("could not remove players from the queue_entry table")

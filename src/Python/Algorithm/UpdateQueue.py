@@ -10,7 +10,7 @@ def updateQueue():
     for game in GamesList.activeCasualGames:
         if not game.isActive:
             for player in game.players:
-                if player.skillRating == 0:
+                if player.skillRating == None:
 
                     player.queueCycles += 1
 
@@ -18,7 +18,7 @@ def updateQueue():
                         player.queueCycles = 0
                         player.urgentGameNeeded = True
 
-                        if(player.skillRating == 0):
+                        if(player.skillRating == None):
                             game.removePlayerFromCasual(player)
                             JoinQueue.joinCasualParkQueue.append(player)
                         else:
