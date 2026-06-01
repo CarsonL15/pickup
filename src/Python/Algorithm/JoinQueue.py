@@ -60,6 +60,14 @@ class JoinQueue:
         JoinQueue.joinCasualParkQueue = []
         JoinQueue.joinCompetitiveParkQueue = []
 
+        JoinQueue.gamesCreated = []
+        JoinQueue.gamesStarted = []
+
+        JoinQueue.playersJoined = []
+        JoinQueue.teamsJoined = []
+
+        JoinQueue.gamesFinished = []
+
         joinGamesQueueResponse = (
             supabase.table("queue_entry")
             .select("*")
