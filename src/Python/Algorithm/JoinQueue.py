@@ -107,7 +107,7 @@ class JoinQueue:
         #INSERT games made
         gamesMade = []
         for game in JoinQueue.gamesCreated:
-            newGame = {"game_id": game.gameID, "is_casual":game.isCasual,"park_id":game.parkID,"is_active":game.isActive}
+            newGame = {"game_id": game.gameID, "is_casual":game.isCasual,"park_id":game.parkID,"is_active":game.isActive,"team1_skill":game.team1Skill,"team2_skill":game.team2Skill}
             gamesMade.append(newGame)
 
         if gamesMade: # if gamesMade is not empty
