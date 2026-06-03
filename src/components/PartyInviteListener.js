@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabaseClient';
-import { getCurrentLocation } from '../getLocation';
 import './PartyInviteListener.css';
 
 // App-wide party listener (mounted at the router root). Two jobs:
@@ -81,19 +80,22 @@ export default function PartyInviteListener() {
             .eq('party_id', party.party_id).eq('user_id', myUserId).maybeSingle();
           if (cancelled || !membership) return;
 
-          // mirror the leader's settings from a queue row for this party
+          // use the LEADER's settings AND location for the whole party — simplest
+          // fix: no per-member geolocation prompt, so everyone's queue row lands
+          // together (closes the partial-team race window)
           const { data: leaderRow } = await supabase
-            .from('queue_entry').select('is_casual, num_vs').eq('party_id', party.party_id).limit(1).maybeSingle();
-          const isCasual = leaderRow?.is_casual ?? true;
-          const numVs = leaderRow?.num_vs ?? 5;
-
-          let lat, lon;
-          try { ({ lat, lon } = await getCurrentLocation()); }
-          catch { alert('We need your location to join the game. Please enable location access.'); return; }
+            .from('queue_entry').select('is_casual, num_vs, latitude, longitude')
+            .eq('player_id', party.leader_id).maybeSingle();
+          if (cancelled) return;
+          if (!leaderRow || leaderRow.latitude == null) {
+            alert('Could not find the party leader in the queue.'); return;
+          }
+          const isCasual = leaderRow.is_casual ?? true;
+          const numVs = leaderRow.num_vs ?? 5;
 
           const { error: queueErr } = await supabase.from('queue_entry').insert({
             player_id: myUserId, party_id: party.party_id, num_vs: numVs,
-            latitude: lat, longitude: lon, distance_preference: 100,
+            latitude: leaderRow.latitude, longitude: leaderRow.longitude, distance_preference: 100,
             is_casual: isCasual, skill_rating: isCasual ? null : 1000,
           });
           if (queueErr) { alert('Could not join the game queue: ' + queueErr.message); return; }
