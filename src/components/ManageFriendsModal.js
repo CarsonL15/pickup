@@ -198,4 +198,7 @@ function ManageFriendsModal({ onClose, myUserId: myUserIdProp, onFriendsChange }
 
       </div>
     </div>
-  )
+  );
+}
+
+export default ManageFriendsModal;

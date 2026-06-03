@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabaseClient';
 import PlayerDot from '../components/PlayerDot';
 import './FindingGameScreen.css';
+import GameChat from '../components/GameChat';
 
 // ─── Finding Game (matchmaking lobby) ──────────────────────────────────────────
 // Two-stage realtime discovery:
@@ -26,6 +27,7 @@ function FindingGameScreen() {
   const [gameId, setGameId] = useState(null);
   const [players, setPlayers] = useState([]); // { user_id, team_side, username, has_ball, is_captain }
   const [parkName, setParkName] = useState('');
+  const [showGameChat, setShowGameChat] = useState(false);
 
   // ── Stage 1: discover my game, and stamp my "have ball" choice on my own row ──
   useEffect(() => {
@@ -160,19 +162,4 @@ function FindingGameScreen() {
 
       <div className="fg-actions">
         <button className="fg-action-btn" onClick={handleCancel}>CANCEL</button>
-        <button className="fg-action-btn" onClick={() => { /* TODO: game chat */ }}>CHAT</button>
-      </div>
-
-      <div className="fg-bottom-nav">
-        <button aria-label="Profile" onClick={() => navigate('/ProfileScreen')}>
-          <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-            <circle cx="12" cy="7" r="4" />
-          </svg>
-        </button>
-      </div>
-    </div>
-  );
-}
-
-export default FindingGameScreen;
+        <button class

@@ -92,7 +92,7 @@ export default function GameChat({ user, game_id, onClose }) {
   };
 
   return (
-    <div className="screen">
+    <div className="chat-overlay">
       <div className="chat-screen">
 
         <div className="messages">
