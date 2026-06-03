@@ -93,6 +93,8 @@ export default function PartyInviteListener() {
           const isCasual = leaderRow.is_casual ?? true;
           const numVs = leaderRow.num_vs ?? 5;
 
+          // clear any stale queue row for me so re-queueing doesn't hit the PK (player_id)
+          await supabase.from('queue_entry').delete().eq('player_id', myUserId);
           const { error: queueErr } = await supabase.from('queue_entry').insert({
             player_id: myUserId, party_id: party.party_id, num_vs: numVs,
             latitude: leaderRow.latitude, longitude: leaderRow.longitude, distance_preference: 100,

@@ -168,6 +168,8 @@ function HomeScreen() {
       // 3. queue myself (share party_id when in a party so the matchmaker groups us).
       //    skill_rating is NULL for casual, a real rating for competitive
       //    (TODO: source from skill_rating/user_stats; placeholder for now).
+      // clear any stale queue row so re-searching doesn't hit the queue_entry PK (player_id)
+      await supabase.from('queue_entry').delete().eq('player_id', appUser.user_id);
       const { error: queueErr } = await supabase.from('queue_entry').insert({
         player_id: appUser.user_id,
         party_id: partyId,
