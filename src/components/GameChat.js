@@ -92,10 +92,14 @@ export default function GameChat({ user, game_id, onClose }) {
   };
 
   return (
-    <div className="chat-overlay">
-      <div className="chat-screen">
+    <div className="chat-overlay game-chat-overlay">
+      <div className="chat-screen game-chat-screen">
+        <div className="game-chat-header">
+          <span>GAME CHAT</span>
+          <button className="game-chat-close" type="button" onClick={onClose} aria-label="Close chat">×</button>
+        </div>
 
-        <div className="messages">
+        <div className="messages game-chat-messages">
           {messages.map((msg) => {
             const isMe = msg.user_id === myUserId;
 
@@ -114,7 +118,7 @@ export default function GameChat({ user, game_id, onClose }) {
                 </div>
 
                 {/* Username + time BELOW bubble */}
-                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                <div className="game-chat-meta">
                   {!isMe && (
                     <span className="message-sender">@{msg.username}</span>
                   )}
@@ -130,18 +134,15 @@ export default function GameChat({ user, game_id, onClose }) {
           })}
         </div>
 
-        <form onSubmit={sending} className="chat-input-container">
+        <form onSubmit={sending} className="chat-input-container game-chat-input-container">
           <input
             type="text"
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Type a message..."
           />
-          <button type="submit">Send</button>
+          <button type="submit">SEND</button>
         </form>
-
-        <button onClick={onClose}>Close</button>
-
       </div>
     </div>
   );

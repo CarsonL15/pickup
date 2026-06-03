@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabaseClient';
 import PlayerDot from '../components/PlayerDot';
+import GameChat from '../components/GameChat';
 import './GameDetailsScreen.css';
 
 // ─── Game Details ──────────────────────────────────────────────────────────────
@@ -28,11 +29,14 @@ function GameDetailsScreen() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const gameId = state?.gameId ?? null;
-  const [mode, setMode] = useState(state?.mode ?? 'casual');
+  const searchParams = new URLSearchParams(window.location.search);
+  const gameIdParam = searchParams.get('gameId');
+  const gameId = state?.gameId ?? (gameIdParam != null ? Number(gameIdParam) : null);
+  const [mode, setMode] = useState(state?.mode ?? searchParams.get('mode') ?? 'casual');
   const [parkName, setParkName] = useState('');
   const [roster, setRoster] = useState([]);
   const [myUserId, setMyUserId] = useState(null);
+  const [showGameChat, setShowGameChat] = useState(false);
 
   // resolve my integer user_id (to figure out which side is "your team")
   useEffect(() => {
@@ -190,7 +194,18 @@ function GameDetailsScreen() {
         <span className="gd-location">{parkName}</span>
       </div>
 
-      <button className="gd-leave-btn" onClick={handleLeave}>LEAVE</button>
+      <div className="gd-actions">
+        <button className="gd-action-btn" onClick={handleLeave}>LEAVE</button>
+        <button className="gd-action-btn" onClick={() => setShowGameChat(true)}>CHAT</button>
+
+        {showGameChat && (
+          <GameChat
+            user={user}
+            game_id={gameId}
+            onClose={() => setShowGameChat(false)}
+          />
+        )}
+      </div>
 
       {ProfileNav}
 
