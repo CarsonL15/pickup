@@ -35,6 +35,18 @@ function HomeScreen() {
     return () => { cancelled = true; };
   }, [user?.id]);
 
+  // recover an existing 'forming' party I lead, so re-renders/refreshes don't
+  // orphan it and spin up duplicates (partyId is otherwise ephemeral state)
+  useEffect(() => {
+    if (myUserId == null) return;
+    let cancelled = false;
+    supabase.from('party').select('party_id')
+      .eq('leader_id', myUserId).eq('status', 'forming')
+      .order('party_id', { ascending: false }).limit(1).maybeSingle()
+      .then(({ data }) => { if (!cancelled && data) setPartyId(data.party_id); });
+    return () => { cancelled = true; };
+  }, [myUserId]);
+
   async function handleLogout() {
     await supabase.auth.signOut();
     navigate('/');

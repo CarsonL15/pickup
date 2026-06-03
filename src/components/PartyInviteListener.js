@@ -107,7 +107,10 @@ export default function PartyInviteListener() {
   }, [myUserId, navigate]);
 
   async function accept() {
-    if (!invite || myUserId == null) return;
+    if (!invite || myUserId == null) {
+      alert('Not ready yet (still loading your account). Try again in a moment.');
+      return;
+    }
     const { error: memberErr } = await supabase
       .from('party_member').insert({ party_id: invite.party_id, user_id: myUserId });
     if (memberErr) { alert('Could not join party: ' + memberErr.message); return; }
@@ -115,6 +118,8 @@ export default function PartyInviteListener() {
       .from('party_invite').update({ status: 'accepted' }).eq('invite_id', invite.invite_id);
     if (inviteErr) { alert('Joined, but could not update invite: ' + inviteErr.message); }
     setInvite(null);
+    // head into the lobby to wait; the leader's SEARCH will queue me (status -> 'queued')
+    navigate('/FindingGameScreen');
   }
 
   async function decline() {
