@@ -20,8 +20,8 @@ function ModifyGameModal({ settings, onClose, onDone }) {
         <div className="mode-toggle">
           <button
             className={`mode-option ${mode === 'competitive' ? 'active' : ''}`}
-            // leaving casual: 5V5 is disabled for competitive, so drop back to 4V4
-            onClick={() => onDone({ ...settings, mode: 'competitive', format: format === '5V5' ? '4V4' : format })}
+            // keep the chosen format (5V5 is now allowed in competitive too)
+            onClick={() => onDone({ ...settings, mode: 'competitive', format })}
           >
             COMPETITIVE
           </button>
@@ -37,15 +37,13 @@ function ModifyGameModal({ settings, onClose, onDone }) {
         {mode === 'competitive' && (
           <div className="format-row">
             {FORMATS.map(f => {
-              const disabled = f === '5V5';
               const active = format === f;
               return (
                 <button
                   key={f}
-                  className={`format-btn ${active ? 'active' : ''} ${disabled ? 'disabled' : ''}`}
-                  onClick={() => !disabled && update('format', f)}
-                  disabled={disabled}
-                  aria-label={disabled ? `${f} — coming soon` : f}
+                  className={`format-btn ${active ? 'active' : ''}`}
+                  onClick={() => update('format', f)}
+                  aria-label={f}
                 >
                   {f}
                 </button>

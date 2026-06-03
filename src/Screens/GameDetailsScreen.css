@@ -9,7 +9,9 @@
 
 /* ── Title ── */
 .gd-title {
-  font-size: var(--text-hero);
+  /* "DETAILS" is 7 chars vs the hero token's 4-char "PLAY"/"NOW", so the shared
+     --text-hero clamp overflows the 430px frame. Cap it lower for this word. */
+  font-size: clamp(3.5rem, 18vw, 5.5rem);
   font-weight: var(--font-black);
   line-height: 0.88;
   letter-spacing: -0.02em;
@@ -46,17 +48,25 @@
 
 .gd-circles-row {
   display: flex;
+  flex-wrap: wrap;        /* safety net; with 60px bubbles a full 5-side fits one row */
   justify-content: flex-start;
-  gap: var(--space-4);
+  gap: var(--space-3);
+  max-width: 360px;
 }
 
 .gd-circles-grid {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-start;
-  gap: var(--space-4);
-  max-width: 340px;
+  gap: var(--space-3);
+  max-width: 360px;       /* 5 bubbles per row → casual 5v5 (10) packs to 2 rows */
 }
+
+/* Shrink the player bubbles on this screen so a full 5-person side stays on one
+   row (5×60 + 4 gaps ≈ 348px ≤ 360). Keeps 5v5 the same height as 4v4. */
+.gd-teams .player-dot-wrap { width: 60px; }
+.gd-teams .player-dot      { width: 60px; height: 60px; }
+.gd-teams .player-dot-name { max-width: 60px; }
 
 /* ── Player circle ── */
 .gd-circle {
