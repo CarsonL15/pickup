@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabaseClient';
@@ -23,19 +23,49 @@ function HomeScreen() {
   const [gameSettings, setGameSettings] = useState(DEFAULT_SETTINGS);
   const [invitedPlayers, setInvitedPlayers] = useState([]);
   const [searching, setSearching] = useState(false);
+  const [myUserId, setMyUserId] = useState(null);
+  const [partyId, setPartyId] = useState(null); // set once we invite someone (ad-hoc party)
+
+  // resolve my integer app_user.user_id
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    supabase.from('app_user').select('user_id').eq('auth_id', user.id).maybeSingle()
+      .then(({ data }) => { if (!cancelled && data) setMyUserId(data.user_id); });
+    return () => { cancelled = true; };
+  }, [user]);
 
   async function handleLogout() {
     await supabase.auth.signOut();
     navigate('/');
   }
 
-  function handleInvite(friend) {
+  // Inviting a friend creates an ad-hoc party (lazily, on the first invite) and
+  // sends them a party_invite. They get a realtime popup to accept (PartyInviteListener).
+  async function handleInvite(friend) {
+    if (myUserId == null) return;
+    let pid = partyId;
+    if (pid == null) {
+      const { data: party, error } = await supabase
+        .from('party')
+        .insert({ leader_id: myUserId, isTeam: false, status: 'forming' })
+        .select('party_id').single();
+      if (error || !party) { alert('Could not create party: ' + (error?.message ?? '')); return; }
+      pid = party.party_id;
+      await supabase.from('party_member').insert({ party_id: pid, user_id: myUserId });
+      setPartyId(pid);
+    }
+    const { error: invErr } = await supabase
+      .from('party_invite')
+      .insert({ party_id: pid, inviter_id: myUserId, invitee_id: friend.id, status: 'pending' });
+    if (invErr) { alert('Could not send invite: ' + invErr.message); return; }
     setInvitedPlayers(prev => [...prev, friend]);
   }
 
-  // Solo queue flow: get location -> resolve our integer user_id -> insert a
-  // queue_entry row -> go to the Finding Game lobby, where realtime takes over.
-  // (Party queuing — leader inserts rows for all members — is a later step.)
+  // Queue flow (solo or party leader): get my location -> queue myself (with the
+  // party_id if I have a party) -> if I'm a party leader, flip the party to
+  // 'queued' so my accepted members self-queue with their own locations
+  // (PartyInviteListener) -> go to the Finding Game lobby.
   async function handleSearch() {
     if (searching) return;
     setSearching(true);
@@ -59,17 +89,18 @@ function HomeScreen() {
 
       const isCasual = gameSettings.mode === 'casual';
 
-      // 3. queue yourself. skill_rating must be NULL for casual; a real rating for
-      //    competitive. TODO: source the competitive rating from skill_rating/user_stats.
+      // 3. queue myself (share party_id when in a party so the matchmaker groups us).
+      //    skill_rating is NULL for casual, a real rating for competitive
+      //    (TODO: source from skill_rating/user_stats; placeholder for now).
       const { error: queueErr } = await supabase.from('queue_entry').insert({
         player_id: appUser.user_id,
-        party_id: null,                       // solo for now
+        party_id: partyId,
         num_vs: parseNumVs(gameSettings.format),
         latitude: lat,
         longitude: lon,
         distance_preference: 50,
         is_casual: isCasual,
-        skill_rating: isCasual ? null : 1000, // TODO: real competitive rating
+        skill_rating: isCasual ? null : 1000,
       });
       if (queueErr) {
         // PK conflict = already queued/in a game (queue_entry PK is player_id)
@@ -77,7 +108,12 @@ function HomeScreen() {
         return;
       }
 
-      // 4. hand off to the realtime lobby (haveBall is applied to our game_player row there)
+      // 4. if I'm leading a party, flip it to 'queued' -> members self-queue + follow
+      if (partyId != null) {
+        await supabase.from('party').update({ status: 'queued' }).eq('party_id', partyId);
+      }
+
+      // 5. hand off to the realtime lobby (haveBall is applied to our game_player row there)
       navigate('/FindingGameScreen', {
         state: {
           mode: gameSettings.mode,
