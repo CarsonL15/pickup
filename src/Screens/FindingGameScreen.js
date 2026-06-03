@@ -124,6 +124,7 @@ function FindingGameScreen() {
     return () => { cancelled = true; supabase.removeChannel(channel); };
   }, [gameId, mode, navigate]);
 
+  // eslint-disable-next-line no-unused-vars -- CANCEL button removed; logic kept for future re-add
   async function handleCancel() {
     if (user) {
       const { data: appUser } = await supabase
@@ -140,7 +141,9 @@ function FindingGameScreen() {
 
   return (
     <div className="screen fg-screen">
-      <h1 className="fg-title">FINDING<br />GAME</h1>
+      <h1 className="fg-title">
+        FINDING<br />GAME<span className="fg-title-dots" aria-hidden="true"><span>.</span><span>.</span><span>.</span></span>
+      </h1>
 
       <div className="fg-meta">
         <span className="fg-mode">{mode === 'competitive' ? 'COMPETITIVE' : 'CASUAL'}</span>
@@ -161,7 +164,6 @@ function FindingGameScreen() {
       </div>
 
       <div className="fg-actions">
-        <button className="fg-action-btn" onClick={handleCancel}>CANCEL</button>
         <button className="fg-action-btn" onClick={() => { setShowGameChat(true); }}>CHAT</button>
 
         {showGameChat && (

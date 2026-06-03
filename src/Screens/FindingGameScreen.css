@@ -9,7 +9,9 @@
 
 /* ── Title ── */
 .fg-title {
-  font-size: var(--text-hero);
+  /* "FINDING" is 7 chars vs the hero token's 4-char "PLAY"/"NOW", so the shared
+     --text-hero clamp overflows the 430px frame. Cap it lower for this word. */
+  font-size: clamp(3.5rem, 18vw, 5.5rem);
   font-weight: var(--font-black);
   line-height: 0.88;
   letter-spacing: -0.02em;
@@ -19,6 +21,29 @@
   padding-top: var(--space-10);
   width: 100%;
   text-align: left;
+}
+
+/* Animated ellipsis trailing "GAME" — signals matchmaking is in progress.
+   Dots fade in sequence (left→right) on a loop. Accent color to read as activity. */
+.fg-title-dots {
+  display: inline-block;
+  margin-left: 0.08em;
+  color: var(--color-icon);
+}
+
+.fg-title-dots span {
+  animation: fg-dot-fade 1.4s ease-in-out infinite both;
+}
+.fg-title-dots span:nth-child(2) { animation-delay: 0.2s; }
+.fg-title-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes fg-dot-fade {
+  0%, 70%, 100% { opacity: 0.2; }
+  35%            { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fg-title-dots span { animation: none; opacity: 0.6; }
 }
 
 /* ── Mode / sport / park ── */
@@ -31,18 +56,19 @@
 }
 
 .fg-mode {
-  font-size: var(--text-2xl);
+  font-size: var(--text-xl);
   font-weight: var(--font-black);
   color: var(--color-accent);
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   line-height: 1;
 }
 
 .fg-sport {
-  font-size: var(--text-2xl);
+  font-size: var(--text-xl);
   font-weight: var(--font-black);
   color: var(--color-text);
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   line-height: 1;
 }
@@ -93,10 +119,10 @@
   background: var(--color-text);   /* joined player — white */
 }
 
-/* ── Cancel / Chat ── */
+/* ── Chat ── */
 .fg-actions {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   width: 100%;
   padding: 0 var(--space-2);
 }
