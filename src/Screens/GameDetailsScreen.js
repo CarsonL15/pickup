@@ -1,76 +1,38 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
+import { supabase } from '../supabaseClient';
+import PlayerDot from '../components/PlayerDot';
 import './GameDetailsScreen.css';
 
-// ─── Supabase / matchmaking integration point ─────────────────────────────────
-// Reached from matchmaking with a real game id in router state:
+// ─── Game Details ──────────────────────────────────────────────────────────────
+// Reached from the Finding Game lobby once the game fills:
+//   navigate('/GameDetailsScreen', { state: { gameId, mode } });
+// Loads the real roster from game_player (+ app_user usernames) and keeps it live
+// via realtime. Competitive splits by team_side; casual is a flat grid.
 //
-//   navigate('/GameDetailsScreen', { state: { game: { game_id, is_casual } } });
+// LEAVE handoff into the post-game flow:
+//   casual      → remove self from game_player → Home (no rating). The casual game
+//                 is ended (is_active=false) as soon as this screen loads.
+//   competitive → remove self → captain goes to /PostGameScreen (report win/loss),
+//                 everyone else goes straight to /RatingScreen.
 //
-// When a game_id is present we load the live roster from `game_player` (+ usernames
-// from `app_user`). Without one we fall back to mock data so the UI still renders
-// during development.
-//
-// Real tables: game(game_id, is_casual, is_active, park_id), game_player(game_id,
-// user_id, team_side, party_id), app_user(user_id, auth_id, username, display_name).
-// user_id is the integer app_user.user_id; the logged-in user maps via
-// app_user.auth_id = auth user.id.
-//
-// LEAVE behaviour:
-//   casual      → remove self from game_player, go Home (no rating, ever). The casual
-//                 game is also ended (is_active=false) the moment this screen loads.
-//   competitive → remove self from game_player, then captains go to /PostGameScreen
-//                 and everyone else goes to /RatingScreen.
-// NOTE: the per-player captain flag is provisioned by matchmaking later; until then
-// `is_captain` is false for everyone and competitive players route to rating.
-// ─────────────────────────────────────────────────────────────────────────────
+// Captain: game_player has no is_captain column yet, so until matchmaking sets one
+// we DERIVE it — the highest-sportsmanship player on each team_side (tiebreak lowest
+// user_id) is the captain. Deterministic, so both clients agree. If a real is_captain
+// column appears later, it takes precedence automatically.
+// ───────────────────────────────────────────────────────────────────────────────
 
-// Mock data for UI development — used when no game_id is passed in router state.
-const MOCK_COMPETITIVE = {
-  mode: 'competitive',
-  location: 'COMSTOCK PARK',
-  time: '10:32',
-  yourTeam: [
-    { id: '1', username: 'jake',    isReporter: false, hasBall: false },
-    { id: '2', username: 'warren',  isReporter: true,  hasBall: false },
-    { id: '3', username: 'carson',  isReporter: false, hasBall: false },
-    { id: '4', username: 'nicolle', isReporter: false, hasBall: false },
-  ],
-  theirTeam: [
-    { id: '5', username: 'p5', isReporter: false, hasBall: false },
-    { id: '6', username: 'p6', isReporter: false, hasBall: false },
-    { id: '7', username: 'p7', isReporter: false, hasBall: false },
-    { id: '8', username: 'p8', isReporter: true,  hasBall: false },
-  ],
-};
-
-const MOCK_CASUAL = {
-  mode: 'casual',
-  location: 'COMSTOCK PARK',
-  players: [
-    { id: '1', username: 'jake',    hasBall: false },
-    { id: '2', username: 'warren',  hasBall: true  },
-    { id: '3', username: 'carson',  hasBall: true  },
-    { id: '4', username: 'nicolle', hasBall: false },
-    { id: '5', username: 'p5',      hasBall: false },
-    { id: '6', username: 'p6',      hasBall: false },
-    { id: '7', username: 'p7',      hasBall: false },
-    { id: '8', username: 'p8',      hasBall: false },
-  ],
-};
-
-function PlayerCircle({ isReporter, hasBall, mode }) {
-  let variant = '';
-  if (mode === 'competitive' && isReporter) variant = 'reporter';
-  if (mode === 'casual' && hasBall) variant = 'ball';
-  return (
-    <div className={`gd-circle ${variant}`}>
-      {variant === 'reporter' && <span className="gd-circle-label">C</span>}
-      {variant === 'ball' && <span className="gd-circle-label">B</span>}
-    </div>
-  );
+// captain = highest sportsmanship on a team, tiebreak lowest user_id
+function pickCaptain(players) {
+  if (!players.length) return null;
+  return players.reduce((best, p) => {
+    const bs = best.sportsmanship ?? -Infinity;
+    const ps = p.sportsmanship ?? -Infinity;
+    if (ps > bs) return p;
+    if (ps === bs && p.user_id < best.user_id) return p;
+    return best;
+  });
 }
 
 function GameDetailsScreen() {
@@ -78,114 +40,140 @@ function GameDetailsScreen() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const incoming = state?.game;
-  const gameId = incoming?.game_id ?? null;
+  const gameId = state?.gameId ?? null;
+  const [mode, setMode] = useState(state?.mode ?? 'casual');
+  const [parkName, setParkName] = useState('');
+  const [roster, setRoster] = useState([]);
+  const [myUserId, setMyUserId] = useState(null);
 
-  // Live roster loaded from Supabase (null until loaded / when running on mock).
-  const [live, setLive] = useState(null);
-
+  // resolve my integer user_id (to figure out which side is "your team")
   useEffect(() => {
-    if (!gameId || !user) return;
-    let active = true;
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from('app_user').select('user_id').eq('auth_id', user.id).maybeSingle();
+      if (!cancelled && data) setMyUserId(data.user_id);
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
 
-    async function load() {
-      // map auth user → integer app_user.user_id
-      const { data: meRow } = await supabase
-        .from('app_user').select('user_id').eq('auth_id', user.id).single();
-      const myId = meRow?.user_id ?? null;
+  // load roster + game meta, and keep the roster live
+  useEffect(() => {
+    if (gameId == null) return;
+    let cancelled = false;
 
-      const { data: gameRow } = await supabase
-        .from('game').select('game_id, is_casual, is_active, park_id')
-        .eq('game_id', gameId).single();
-
-      const { data: players } = await supabase
-        .from('game_player').select('user_id, team_side, party_id')
+    async function loadRoster() {
+      const { data } = await supabase
+        .from('game_player')
+        .select('*, app_user(username)')
         .eq('game_id', gameId);
+      if (cancelled || !data) return;
 
-      const ids = (players ?? []).map(p => p.user_id);
-      const { data: users } = ids.length
-        ? await supabase.from('app_user').select('user_id, username, display_name').in('user_id', ids)
+      // sportsmanship powers the derived captain (no is_captain column yet)
+      const ids = data.map((r) => r.user_id);
+      const { data: stats } = ids.length
+        ? await supabase.from('user_stats').select('user_id, sportsmanship').in('user_id', ids)
         : { data: [] };
-      const nameById = Object.fromEntries(
-        (users ?? []).map(u => [u.user_id, u.display_name || u.username])
-      );
+      const sportById = Object.fromEntries((stats ?? []).map((s) => [s.user_id, s.sportsmanship]));
 
-      const roster = (players ?? []).map(p => ({
-        id: p.user_id,
-        username: nameById[p.user_id] ?? `#${p.user_id}`,
-        team_side: p.team_side,
-        is_captain: false, // matchmaking will provide the captain flag later
+      const next = data.map((r) => ({
+        user_id: r.user_id,
+        team_side: r.team_side,
+        username: r.app_user?.username ?? null,
+        has_ball: r.has_ball,                 // undefined until the column exists
+        sportsmanship: sportById[r.user_id] ?? null,
+        is_captain: r.is_captain ?? false,    // prefer the real column when it exists
       }));
-      const mine = roster.find(p => p.id === myId);
 
-      if (!active) return;
-      setLive({
-        casual: gameRow?.is_casual ?? false,
-        park: gameRow?.park_id,
-        roster,
-        myId,
-        mySide: mine?.team_side ?? null,
-        amCaptain: !!mine?.is_captain,
-      });
+      // no real captain flag yet → derive one per side from sportsmanship
+      if (!next.some((p) => p.is_captain)) {
+        for (const side of [1, 2]) {
+          const cap = pickCaptain(next.filter((p) => p.team_side === side));
+          if (cap) cap.is_captain = true;
+        }
+      }
 
-      // A casual game has nothing to resolve — end it as soon as details show.
-      if ((gameRow?.is_casual ?? false) && gameRow?.is_active) {
+      if (!cancelled) setRoster(next);
+    }
+
+    async function loadMeta() {
+      const { data: g } = await supabase
+        .from('game').select('is_casual, is_active, park_id').eq('game_id', gameId).maybeSingle();
+      if (cancelled || !g) return;
+      if (!state?.mode) setMode(g.is_casual ? 'casual' : 'competitive');
+      if (g.park_id != null) {
+        const { data: p } = await supabase
+          .from('parks').select('park_name').eq('park_id', g.park_id).maybeSingle();
+        if (!cancelled && p) setParkName(p.park_name);
+      }
+      // casual has nothing to resolve — end it the moment details are shown
+      if (g.is_casual && g.is_active && !cancelled) {
         await supabase.from('game').update({ is_active: false }).eq('game_id', gameId);
       }
     }
 
-    load();
-    return () => { active = false; };
-  }, [gameId, user]);
+    loadRoster();
+    loadMeta();
 
-  // Build the view model from either live data or mock.
-  let game;
-  if (gameId) {
-    if (!live) return <div className="screen gd-screen" />; // loading
-    if (live.casual) {
-      game = {
-        mode: 'casual',
-        location: live.park != null ? `PARK ${live.park}` : '',
-        players: live.roster.map(p => ({ id: p.id, username: p.username, hasBall: false })),
-      };
-    } else {
-      const side = live.mySide ?? 1;
-      game = {
-        mode: 'competitive',
-        location: live.park != null ? `PARK ${live.park}` : '',
-        time: '',
-        yourTeam: live.roster.filter(p => p.team_side === side)
-          .map(p => ({ id: p.id, username: p.username, isReporter: p.is_captain, hasBall: false })),
-        theirTeam: live.roster.filter(p => p.team_side !== side)
-          .map(p => ({ id: p.id, username: p.username, isReporter: p.is_captain, hasBall: false })),
-      };
-    }
-  } else {
-    game = incoming?.mode === 'competitive' ? MOCK_COMPETITIVE : MOCK_CASUAL;
-  }
+    // roster is tiny (≤10), so just re-fetch on any change — keeps usernames joined
+    const channel = supabase
+      .channel(`game-details-${gameId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'game_player', filter: `game_id=eq.${gameId}` },
+        () => loadRoster()
+      )
+      .subscribe();
 
-  const isCompetitive = game.mode === 'competitive';
+    return () => { cancelled = true; supabase.removeChannel(channel); };
+  }, [gameId, state?.mode]);
+
+  const isCompetitive = mode === 'competitive';
+  // "your team" = the side the current user is on; fall back to side 1 if unknown
+  const myTeamSide = roster.find((p) => p.user_id === myUserId)?.team_side ?? 1;
+  const amCaptain = !!roster.find((p) => p.user_id === myUserId)?.is_captain;
 
   async function handleLeave() {
-    // Real game: remove self from the live roster.
-    if (gameId && live?.myId != null) {
+    if (user && myUserId != null) {
       await supabase.from('game_player').delete()
-        .eq('game_id', gameId).eq('user_id', live.myId);
+        .eq('game_id', gameId).eq('user_id', myUserId);
     }
 
     if (isCompetitive) {
-      const navState = { state: { game_id: gameId, mySide: live?.mySide ?? null } };
-      // Captains reconcile the result; everyone else goes straight to rating.
-      // In mock/dev mode (no gameId) route to PostGame so it stays reachable.
-      if (!gameId || live?.amCaptain) {
-        navigate('/PostGameScreen', navState);
-      } else {
-        navigate('/RatingScreen', navState);
-      }
+      // captains reconcile the result; everyone else rates straight away
+      const navState = { state: { gameId, mySide: myTeamSide } };
+      navigate(amCaptain ? '/PostGameScreen' : '/RatingScreen', navState);
     } else {
       navigate('/HomeScreen'); // casual: no rating
     }
   }
+
+  const ProfileNav = (
+    <div className="gd-bottom-nav">
+      <button aria-label="Profile" onClick={() => navigate('/ProfileScreen')}>
+        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+          <circle cx="12" cy="7" r="4" />
+        </svg>
+      </button>
+    </div>
+  );
+
+  if (gameId == null) {
+    return (
+      <div className="screen gd-screen">
+        <h1 className="gd-title">GAME<br />DETAILS</h1>
+        <p style={{ color: 'var(--color-text-muted)', width: '100%', textAlign: 'left' }}>
+          No game selected.
+        </p>
+        {ProfileNav}
+      </div>
+    );
+  }
+
+  const yourTeam = roster.filter((p) => p.team_side === myTeamSide);
+  const theirTeam = roster.filter((p) => p.team_side !== myTeamSide);
 
   return (
     <div className="screen gd-screen">
@@ -197,16 +185,16 @@ function GameDetailsScreen() {
           <div className="gd-team-block">
             <span className="gd-team-label">YOUR TEAM</span>
             <div className="gd-circles-row">
-              {game.yourTeam.map(p => (
-                <PlayerCircle key={p.id} isReporter={p.isReporter} hasBall={p.hasBall} mode="competitive" />
+              {yourTeam.map(p => (
+                <PlayerDot key={p.user_id} isCaptain={p.is_captain} hasBall={p.has_ball} username={p.username} />
               ))}
             </div>
           </div>
           <div className="gd-team-block">
             <span className="gd-team-label">THEIR TEAM</span>
             <div className="gd-circles-row">
-              {game.theirTeam.map(p => (
-                <PlayerCircle key={p.id} isReporter={p.isReporter} hasBall={p.hasBall} mode="competitive" />
+              {theirTeam.map(p => (
+                <PlayerDot key={p.user_id} isCaptain={p.is_captain} hasBall={p.has_ball} username={p.username} />
               ))}
             </div>
           </div>
@@ -215,28 +203,20 @@ function GameDetailsScreen() {
         <div className="gd-teams">
           <span className="gd-team-label">PLAYERS</span>
           <div className="gd-circles-grid">
-            {game.players.map(p => (
-              <PlayerCircle key={p.id} isReporter={false} hasBall={p.hasBall} mode="casual" />
+            {roster.map(p => (
+              <PlayerDot key={p.user_id} isCaptain={p.is_captain} hasBall={p.has_ball} username={p.username} />
             ))}
           </div>
         </div>
       )}
 
       <div className="gd-info">
-        <span className="gd-location">{game.location}</span>
-        {isCompetitive && game.time && <span className="gd-time">{game.time}</span>}
+        <span className="gd-location">{parkName}</span>
       </div>
 
       <button className="gd-leave-btn" onClick={handleLeave}>LEAVE</button>
 
-      <div className="gd-bottom-nav">
-        <button aria-label="Profile" onClick={() => navigate('/ProfileScreen')}>
-          <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-            <circle cx="12" cy="7" r="4" />
-          </svg>
-        </button>
-      </div>
+      {ProfileNav}
 
     </div>
   );

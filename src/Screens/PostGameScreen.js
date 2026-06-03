@@ -6,7 +6,7 @@ import './PostGameScreen.css';
 // ─── Captain win/loss reporting ───────────────────────────────────────────────
 // Reached from GameDetailsScreen (captains only) with:
 //
-//   navigate('/PostGameScreen', { state: { game_id, mySide } });
+//   navigate('/PostGameScreen', { state: { gameId, mySide } });
 //
 // The captain reports whether THEIR team won; the `report_game_result` RPC
 // normalizes it to game.team1_wins and reconciles the two captains:
@@ -22,7 +22,7 @@ function PostGameScreen() {
   const { state } = useLocation();
   const navigate = useNavigate();
 
-  const gameId = state?.game_id ?? null;
+  const gameId = state?.gameId ?? null;
   const mySide = state?.mySide ?? null;
   const usingMock = gameId == null;
 
@@ -30,7 +30,7 @@ function PostGameScreen() {
   const [submitting, setSubmitting] = useState(false);
 
   function goRate() {
-    navigate('/RatingScreen', { state: { game_id: gameId, mySide } });
+    navigate('/RatingScreen', { state: { gameId, mySide } });
   }
 
   async function handleResult(result) {

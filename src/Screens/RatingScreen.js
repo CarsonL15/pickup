@@ -7,7 +7,7 @@ import './RatingScreen.css';
 // ─── Post-game ratings (competitive only) ─────────────────────────────────────
 // Reached from GameDetailsScreen / PostGameScreen with:
 //
-//   navigate('/RatingScreen', { state: { game_id, mySide } });
+//   navigate('/RatingScreen', { state: { gameId, mySide } });
 //
 // Builds the queue from the permanent `game_history_player` roster, in order:
 //   1. the OTHER team   → rate sportsmanship   (skippable)
@@ -32,7 +32,7 @@ function RatingScreen() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const gameId = state?.game_id ?? null;
+  const gameId = state?.gameId ?? null;
   const usingMock = gameId == null;
 
   const [queue, setQueue] = useState(usingMock ? MOCK_QUEUE : null);

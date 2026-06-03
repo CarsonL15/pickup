@@ -20,35 +20,39 @@ function ModifyGameModal({ settings, onClose, onDone }) {
         <div className="mode-toggle">
           <button
             className={`mode-option ${mode === 'competitive' ? 'active' : ''}`}
-            onClick={() => update('mode', 'competitive')}
+            // leaving casual: 5V5 is disabled for competitive, so drop back to 4V4
+            onClick={() => onDone({ ...settings, mode: 'competitive', format: format === '5V5' ? '4V4' : format })}
           >
             COMPETITIVE
           </button>
           <button
             className={`mode-option ${mode === 'casual' ? 'active' : ''}`}
-            onClick={() => update('mode', 'casual')}
+            // casual is always 5V5 — lock the format and hide the options
+            onClick={() => onDone({ ...settings, mode: 'casual', format: '5V5' })}
           >
             CASUAL
           </button>
         </div>
 
-        <div className="format-row">
-          {FORMATS.map(f => {
-            const disabled = f === '5V5';
-            const active = format === f;
-            return (
-              <button
-                key={f}
-                className={`format-btn ${active ? 'active' : ''} ${disabled ? 'disabled' : ''}`}
-                onClick={() => !disabled && update('format', f)}
-                disabled={disabled}
-                aria-label={disabled ? `${f} — coming soon` : f}
-              >
-                {f}
-              </button>
-            );
-          })}
-        </div>
+        {mode === 'competitive' && (
+          <div className="format-row">
+            {FORMATS.map(f => {
+              const disabled = f === '5V5';
+              const active = format === f;
+              return (
+                <button
+                  key={f}
+                  className={`format-btn ${active ? 'active' : ''} ${disabled ? 'disabled' : ''}`}
+                  onClick={() => !disabled && update('format', f)}
+                  disabled={disabled}
+                  aria-label={disabled ? `${f} — coming soon` : f}
+                >
+                  {f}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         <div className="modify-footer">
           <div className="have-ball-row">
