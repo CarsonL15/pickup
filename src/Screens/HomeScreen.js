@@ -148,7 +148,7 @@ function HomeScreen() {
         num_vs: parseNumVs(gameSettings.format),
         latitude: lat,
         longitude: lon,
-        distance_preference: 50,
+        distance_preference: 100,
         is_casual: isCasual,
         skill_rating: isCasual ? null : 1000,
       });

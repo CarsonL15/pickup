@@ -93,7 +93,7 @@ export default function PartyInviteListener() {
 
           await supabase.from('queue_entry').insert({
             player_id: myUserId, party_id: party.party_id, num_vs: numVs,
-            latitude: lat, longitude: lon, distance_preference: 50,
+            latitude: lat, longitude: lon, distance_preference: 100,
             is_casual: isCasual, skill_rating: isCasual ? null : 1000,
           });
           navigate('/FindingGameScreen', {
