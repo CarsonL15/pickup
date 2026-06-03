@@ -1,31 +1,33 @@
+import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import './GameDetailsScreen.css';
 
 // ─── Supabase / matchmaking integration point ─────────────────────────────────
-// This screen receives game data via React Router location.state, passed from
-// the matchmaking algorithm once a game is found:
+// Reached from matchmaking with a real game id in router state:
 //
-//   navigate('/GameDetailsScreen', { state: { game } });
+//   navigate('/GameDetailsScreen', { state: { game: { game_id, is_casual } } });
 //
-// Competitive game shape:
-//   {
-//     mode: 'competitive',
-//     location: 'COMSTOCK PARK',
-//     time: '10:32',
-//     yourTeam: [{ id, username, isReporter, hasBall }],
-//     theirTeam: [{ id, username, isReporter, hasBall }],
-//   }
+// When a game_id is present we load the live roster from `game_player` (+ usernames
+// from `app_user`). Without one we fall back to mock data so the UI still renders
+// during development.
 //
-// Casual game shape:
-//   {
-//     mode: 'casual',
-//     location: 'COMSTOCK PARK',
-//     players: [{ id, username, hasBall }],
-//   }
+// Real tables: game(game_id, is_casual, is_active, park_id), game_player(game_id,
+// user_id, team_side, party_id), app_user(user_id, auth_id, username, display_name).
+// user_id is the integer app_user.user_id; the logged-in user maps via
+// app_user.auth_id = auth user.id.
+//
+// LEAVE behaviour:
+//   casual      → remove self from game_player, go Home (no rating, ever). The casual
+//                 game is also ended (is_active=false) the moment this screen loads.
+//   competitive → remove self from game_player, then captains go to /PostGameScreen
+//                 and everyone else goes to /RatingScreen.
+// NOTE: the per-player captain flag is provisioned by matchmaking later; until then
+// `is_captain` is false for everyone and competitive players route to rating.
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Mock data for UI development — remove once matchmaking passes real data
+// Mock data for UI development — used when no game_id is passed in router state.
 const MOCK_COMPETITIVE = {
   mode: 'competitive',
   location: 'COMSTOCK PARK',
@@ -74,15 +76,115 @@ function PlayerCircle({ isReporter, hasBall, mode }) {
 function GameDetailsScreen() {
   const { state } = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
-  // Use real game data when passed from matchmaking, fall back to mock for dev
-  const game = state?.game ?? MOCK_CASUAL;
+  const incoming = state?.game;
+  const gameId = incoming?.game_id ?? null;
+
+  // Live roster loaded from Supabase (null until loaded / when running on mock).
+  const [live, setLive] = useState(null);
+
+  useEffect(() => {
+    if (!gameId || !user) return;
+    let active = true;
+
+    async function load() {
+      // map auth user → integer app_user.user_id
+      const { data: meRow } = await supabase
+        .from('app_user').select('user_id').eq('auth_id', user.id).single();
+      const myId = meRow?.user_id ?? null;
+
+      const { data: gameRow } = await supabase
+        .from('game').select('game_id, is_casual, is_active, park_id')
+        .eq('game_id', gameId).single();
+
+      const { data: players } = await supabase
+        .from('game_player').select('user_id, team_side, party_id')
+        .eq('game_id', gameId);
+
+      const ids = (players ?? []).map(p => p.user_id);
+      const { data: users } = ids.length
+        ? await supabase.from('app_user').select('user_id, username, display_name').in('user_id', ids)
+        : { data: [] };
+      const nameById = Object.fromEntries(
+        (users ?? []).map(u => [u.user_id, u.display_name || u.username])
+      );
+
+      const roster = (players ?? []).map(p => ({
+        id: p.user_id,
+        username: nameById[p.user_id] ?? `#${p.user_id}`,
+        team_side: p.team_side,
+        is_captain: false, // matchmaking will provide the captain flag later
+      }));
+      const mine = roster.find(p => p.id === myId);
+
+      if (!active) return;
+      setLive({
+        casual: gameRow?.is_casual ?? false,
+        park: gameRow?.park_id,
+        roster,
+        myId,
+        mySide: mine?.team_side ?? null,
+        amCaptain: !!mine?.is_captain,
+      });
+
+      // A casual game has nothing to resolve — end it as soon as details show.
+      if ((gameRow?.is_casual ?? false) && gameRow?.is_active) {
+        await supabase.from('game').update({ is_active: false }).eq('game_id', gameId);
+      }
+    }
+
+    load();
+    return () => { active = false; };
+  }, [gameId, user]);
+
+  // Build the view model from either live data or mock.
+  let game;
+  if (gameId) {
+    if (!live) return <div className="screen gd-screen" />; // loading
+    if (live.casual) {
+      game = {
+        mode: 'casual',
+        location: live.park != null ? `PARK ${live.park}` : '',
+        players: live.roster.map(p => ({ id: p.id, username: p.username, hasBall: false })),
+      };
+    } else {
+      const side = live.mySide ?? 1;
+      game = {
+        mode: 'competitive',
+        location: live.park != null ? `PARK ${live.park}` : '',
+        time: '',
+        yourTeam: live.roster.filter(p => p.team_side === side)
+          .map(p => ({ id: p.id, username: p.username, isReporter: p.is_captain, hasBall: false })),
+        theirTeam: live.roster.filter(p => p.team_side !== side)
+          .map(p => ({ id: p.id, username: p.username, isReporter: p.is_captain, hasBall: false })),
+      };
+    }
+  } else {
+    game = incoming?.mode === 'competitive' ? MOCK_COMPETITIVE : MOCK_CASUAL;
+  }
 
   const isCompetitive = game.mode === 'competitive';
 
-  function handleLeave() {
-    // TODO: notify matchmaking that user left
-    navigate('/HomeScreen');
+  async function handleLeave() {
+    // Real game: remove self from the live roster.
+    if (gameId && live?.myId != null) {
+      await supabase.from('game_player').delete()
+        .eq('game_id', gameId).eq('user_id', live.myId);
+    }
+
+    if (isCompetitive) {
+      const navState = { state: { game_id: gameId, mySide: live?.mySide ?? null } };
+      // Captains reconcile the result; everyone else goes straight to rating.
+      // In mock/dev mode (no gameId) route to PostGame so it stays reachable.
+      if (!gameId || live?.amCaptain) {
+        navigate('/PostGameScreen', navState);
+      } else {
+        navigate('/RatingScreen', navState);
+      }
+    } else {
+      navigate('/HomeScreen'); // casual: no rating
+    }
   }
 
   return (
@@ -122,12 +224,10 @@ function GameDetailsScreen() {
 
       <div className="gd-info">
         <span className="gd-location">{game.location}</span>
-        {isCompetitive && <span className="gd-time">{game.time}</span>}
+        {isCompetitive && game.time && <span className="gd-time">{game.time}</span>}
       </div>
 
-      {!isCompetitive && (
-        <button className="gd-leave-btn" onClick={handleLeave}>LEAVE</button>
-      )}
+      <button className="gd-leave-btn" onClick={handleLeave}>LEAVE</button>
 
       <div className="gd-bottom-nav">
         <button aria-label="Profile" onClick={() => navigate('/ProfileScreen')}>
