@@ -4,7 +4,7 @@ import './PlayerDot.css';
 //   empty   -> dim waiting slot (no name)
 //   filled  -> bright white (a real player joined)
 //   ball     -> purple fill (bringing the ball)
-//   captain  -> red fill (team captain)
+//   captain  -> red fill with a white "C" (team captain)
 // If a player is BOTH captain and has the ball, the fill is red (captain) and a
 // purple ring is drawn around it so both roles are visible.
 export default function PlayerDot({ username, hasBall, isCaptain, empty }) {
@@ -18,7 +18,9 @@ export default function PlayerDot({ username, hasBall, isCaptain, empty }) {
 
   return (
     <div className="player-dot-wrap">
-      <div className={`player-dot player-dot--${fill} ${ballRing ? 'player-dot--ball-ring' : ''}`} />
+      <div className={`player-dot player-dot--${fill} ${ballRing ? 'player-dot--ball-ring' : ''}`}>
+        {!empty && isCaptain && <span className="player-dot-label">C</span>}
+      </div>
       <span className="player-dot-name">{empty ? '' : (username || '…')}</span>
     </div>
   );
