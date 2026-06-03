@@ -2,9 +2,16 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabaseClient';
+import { getCurrentLocation } from '../getLocation';
 import LobbyInviteModal from '../components/LobbyInviteModal';
 import ModifyGameModal from '../components/ModifyGameModal';
 import './HomeScreen.css';
+
+// '4V4' -> 4, '2V2' -> 2, etc. Returns -1 ("any") if it can't parse.
+function parseNumVs(format) {
+  const n = parseInt(format, 10);
+  return Number.isNaN(n) ? -1 : n;
+}
 
 const DEFAULT_SETTINGS = { mode: 'competitive', format: '4V4', haveBall: false };
 
@@ -15,6 +22,7 @@ function HomeScreen() {
   const [showModifyModal, setShowModifyModal] = useState(false);
   const [gameSettings, setGameSettings] = useState(DEFAULT_SETTINGS);
   const [invitedPlayers, setInvitedPlayers] = useState([]);
+  const [searching, setSearching] = useState(false);
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -25,17 +33,61 @@ function HomeScreen() {
     setInvitedPlayers(prev => [...prev, friend]);
   }
 
-  function handleSearch() {
-    const lobbyPayload = {
-      hostId: user.id,
-      mode: gameSettings.mode,       // 'competitive' | 'casual'
-      format: gameSettings.format,   // '1V1' | '2V2' | '3V3' | '4V4'
-      haveBall: gameSettings.haveBall,
-      partyIds: [user.id, ...invitedPlayers.map(p => p.id)],
-    };
-    // TODO: pass lobbyPayload to the matchmaking algorithm
-    // e.g. casualAlgorithm(lobbyPayload) or competitiveAlgorithm(lobbyPayload)
-    console.log('[SEARCH] lobby payload:', lobbyPayload);
+  // Solo queue flow: get location -> resolve our integer user_id -> insert a
+  // queue_entry row -> go to the Finding Game lobby, where realtime takes over.
+  // (Party queuing — leader inserts rows for all members — is a later step.)
+  async function handleSearch() {
+    if (searching) return;
+    setSearching(true);
+    try {
+      // 1. browser location (required so the matchmaker can find nearby parks)
+      let lat, lon;
+      try {
+        ({ lat, lon } = await getCurrentLocation());
+      } catch (err) {
+        alert('We need your location to find nearby games. Please enable location access and try again.');
+        return;
+      }
+
+      // 2. auth uuid -> integer app_user.user_id (queue_entry.player_id is the int id)
+      const { data: appUser, error: userErr } = await supabase
+        .from('app_user').select('user_id').eq('auth_id', user.id).maybeSingle();
+      if (userErr || !appUser) {
+        alert('Could not find your player profile. Please finish setting up your account.');
+        return;
+      }
+
+      const isCasual = gameSettings.mode === 'casual';
+
+      // 3. queue yourself. skill_rating must be NULL for casual; a real rating for
+      //    competitive. TODO: source the competitive rating from skill_rating/user_stats.
+      const { error: queueErr } = await supabase.from('queue_entry').insert({
+        player_id: appUser.user_id,
+        party_id: null,                       // solo for now
+        num_vs: parseNumVs(gameSettings.format),
+        latitude: lat,
+        longitude: lon,
+        distance_preference: 50,
+        is_casual: isCasual,
+        skill_rating: isCasual ? null : 1000, // TODO: real competitive rating
+      });
+      if (queueErr) {
+        // PK conflict = already queued/in a game (queue_entry PK is player_id)
+        alert('Could not join the queue: ' + queueErr.message);
+        return;
+      }
+
+      // 4. hand off to the realtime lobby (haveBall is applied to our game_player row there)
+      navigate('/FindingGameScreen', {
+        state: {
+          mode: gameSettings.mode,
+          numVs: parseNumVs(gameSettings.format),
+          haveBall: gameSettings.haveBall,
+        },
+      });
+    } finally {
+      setSearching(false);
+    }
   }
 
   const invitedIds = invitedPlayers.map(p => p.id);
@@ -77,7 +129,9 @@ function HomeScreen() {
           </button>
         </div>
 
-        <button className="search-btn" onClick={handleSearch}>SEARCH</button>
+        <button className="search-btn" onClick={handleSearch} disabled={searching}>
+          {searching ? 'SEARCHING…' : 'SEARCH'}
+        </button>
 
       </div>
 

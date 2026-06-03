@@ -4,6 +4,7 @@ import LandingPage from './Screens/LandingPage';
 import LoginScreen from './Screens/LoginScreen';
 import ProfileCreationScreen from './Screens/ProfileCreationScreen';
 import HomeScreen from './Screens/HomeScreen';
+import FindingGameScreen from './Screens/FindingGameScreen';
 import GameDetailsScreen from './Screens/GameDetailsScreen';
 import ProfileScreen from './Screens/ProfileScreen';
 import RatingScreen from './Screens/RatingScreen';
@@ -18,6 +19,14 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <HomeScreen />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/FindingGameScreen',
+    element: (
+      <ProtectedRoute>
+        <FindingGameScreen />
       </ProtectedRoute>
     ),
   },
