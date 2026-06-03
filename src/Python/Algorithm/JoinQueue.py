@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from supabase import Client, create_client
 
 from Python.Algorithm.Game import Game
+from Python.Algorithm.GamesList import GamesList
 from Python.Algorithm.Parks import Park
 from Python.Algorithm.Player import Player
 from Python.Algorithm.Team import Team
@@ -24,12 +25,12 @@ class JoinQueue:
 
     gamesCreated : list[Game]= []
     gamesStarted: list[Game] = []
+    gamesInExistence : list[Game] = []
 
     playersJoined : list[Player] = []
     teamsJoined : list[Team] = []
 
 
-    gamesFinished : list[Game] = []
 
     playersJoiningList = []
 
@@ -62,11 +63,31 @@ class JoinQueue:
 
         JoinQueue.gamesCreated = []
         JoinQueue.gamesStarted = []
+        JoinQueue.gamesInExistence = []
 
         JoinQueue.playersJoined = []
         JoinQueue.teamsJoined = []
 
         JoinQueue.gamesFinished = []
+
+        gamesExistingResponse = (
+            supabase.table("game")
+            .select("game_id")
+            .execute()
+            .data
+        )
+
+        for game in gamesExistingResponse:
+            JoinQueue.gamesInExistence.append(game["game_id"])
+
+
+        for game in GamesList.activeCasualGames:
+            if game.gameID not in JoinQueue.gamesInExistence:
+                GamesList.activeCasualGames.remove(game)
+
+        for game in GamesList.activeCompGames:
+            if game.gameID not in JoinQueue.gamesInExistence:
+                GamesList.activeCompGames.remove(game)
 
         joinGamesQueueResponse = (
             supabase.table("queue_entry")
