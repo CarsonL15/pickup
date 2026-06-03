@@ -140,7 +140,9 @@ function FindingGameScreen() {
 
   return (
     <div className="screen fg-screen">
-      <h1 className="fg-title">FINDING<br />GAME</h1>
+      <h1 className="fg-title">
+        FINDING<br />GAME<span className="fg-title-dots" aria-hidden="true"><span>.</span><span>.</span><span>.</span></span>
+      </h1>
 
       <div className="fg-meta">
         <span className="fg-mode">{mode === 'competitive' ? 'COMPETITIVE' : 'CASUAL'}</span>
