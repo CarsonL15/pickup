@@ -11,10 +11,16 @@ import './GameDetailsScreen.css';
 // Loads the real roster from game_player (+ app_user usernames) and keeps it live
 // via realtime. Competitive splits by team_side; casual is a flat grid.
 //
-// Captain (red) / ball (purple) dots: game_player has no is_captain/has_ball
-// columns yet, so those read as undefined → plain gray dots. We select '*', so
-// once those columns are added and the matchmaker populates them, the values flow
-// through automatically and PlayerCircle lights them up — no query change needed.
+// LEAVE handoff into the post-game flow:
+//   casual      → remove self from game_player → Home (no rating). The casual game
+//                 is ended (is_active=false) as soon as this screen loads.
+//   competitive → remove self → captain goes to /PostGameScreen (report win/loss),
+//                 everyone else goes straight to /RatingScreen.
+//
+// Captain: game_player has no is_captain column yet, so until matchmaking sets one
+// we DERIVE it via the game_captains() RPC — highest sportsmanship per team_side
+// (tiebreak lowest user_id). It runs server-side because user_stats RLS hides other
+// players' rows from the client, so a client-side pick would be wrong.
 // ───────────────────────────────────────────────────────────────────────────────
 
 function GameDetailsScreen() {
@@ -51,25 +57,35 @@ function GameDetailsScreen() {
         .select('*, app_user(username)')
         .eq('game_id', gameId);
       if (cancelled || !data) return;
-      setRoster(data.map((r) => ({
+
+      // captains computed server-side (RLS hides other players' sportsmanship)
+      const { data: caps } = await supabase.rpc('game_captains', { p_game_id: gameId });
+      const captainIds = new Set((caps ?? []).map((c) => c.user_id));
+
+      const next = data.map((r) => ({
         user_id: r.user_id,
         team_side: r.team_side,
-        won: r.won,
         username: r.app_user?.username ?? null,
-        is_captain: r.is_captain, // undefined until the column exists
-        has_ball: r.has_ball,     // undefined until the column exists
-      })));
+        has_ball: r.has_ball,                 // undefined until the column exists
+        is_captain: captainIds.has(r.user_id),
+      }));
+
+      if (!cancelled) setRoster(next);
     }
 
     async function loadMeta() {
       const { data: g } = await supabase
-        .from('game').select('is_casual, park_id').eq('game_id', gameId).maybeSingle();
+        .from('game').select('is_casual, is_active, park_id').eq('game_id', gameId).maybeSingle();
       if (cancelled || !g) return;
       if (!state?.mode) setMode(g.is_casual ? 'casual' : 'competitive');
       if (g.park_id != null) {
         const { data: p } = await supabase
           .from('parks').select('park_name').eq('park_id', g.park_id).maybeSingle();
         if (!cancelled && p) setParkName(p.park_name);
+      }
+      // casual has nothing to resolve — end it the moment details are shown
+      if (g.is_casual && g.is_active && !cancelled) {
+        await supabase.from('game').update({ is_active: false }).eq('game_id', gameId);
       }
     }
 
@@ -89,11 +105,24 @@ function GameDetailsScreen() {
     return () => { cancelled = true; supabase.removeChannel(channel); };
   }, [gameId, state?.mode]);
 
+  const isCompetitive = mode === 'competitive';
+  // "your team" = the side the current user is on; fall back to side 1 if unknown
+  const myTeamSide = roster.find((p) => p.user_id === myUserId)?.team_side ?? 1;
+  const amCaptain = !!roster.find((p) => p.user_id === myUserId)?.is_captain;
+
   async function handleLeave() {
     if (user && myUserId != null) {
-      await supabase.from('game_player').delete().eq('user_id', myUserId);
+      await supabase.from('game_player').delete()
+        .eq('game_id', gameId).eq('user_id', myUserId);
     }
-    navigate('/HomeScreen');
+
+    if (isCompetitive) {
+      // captains reconcile the result; everyone else rates straight away
+      const navState = { state: { gameId, mySide: myTeamSide } };
+      navigate(amCaptain ? '/PostGameScreen' : '/RatingScreen', navState);
+    } else {
+      navigate('/HomeScreen'); // casual: no rating
+    }
   }
 
   const ProfileNav = (
@@ -119,9 +148,6 @@ function GameDetailsScreen() {
     );
   }
 
-  const isCompetitive = mode === 'competitive';
-  // "your team" = the side the current user is on; fall back to side 1 if unknown
-  const myTeamSide = roster.find((p) => p.user_id === myUserId)?.team_side ?? 1;
   const yourTeam = roster.filter((p) => p.team_side === myTeamSide);
   const theirTeam = roster.filter((p) => p.team_side !== myTeamSide);
 
