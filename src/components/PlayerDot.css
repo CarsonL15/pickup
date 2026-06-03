@@ -24,6 +24,11 @@
 .player-dot--ball     { background: var(--color-ball); transform: scale(1.04); }     /* purple */
 .player-dot--captain  { background: var(--color-reporter); transform: scale(1.04); } /* red */
 
+/* captain who also brings the ball: red fill + purple ring (bg gap then purple) */
+.player-dot--ball-ring {
+  box-shadow: 0 0 0 3px var(--color-bg), 0 0 0 6px var(--color-ball);
+}
+
 .player-dot-name {
   font-size: var(--text-xs);
   font-weight: var(--font-bold);
