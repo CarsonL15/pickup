@@ -48,8 +48,10 @@
 
 .gd-circles-row {
   display: flex;
+  flex-wrap: wrap;        /* 5-per-side teams wrap instead of overflowing the frame */
   justify-content: flex-start;
   gap: var(--space-4);
+  max-width: 340px;
 }
 
 .gd-circles-grid {
