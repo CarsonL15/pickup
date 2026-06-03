@@ -119,10 +119,10 @@
   background: var(--color-text);   /* joined player — white */
 }
 
-/* ── Cancel / Chat ── */
+/* ── Chat ── */
 .fg-actions {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   width: 100%;
   padding: 0 var(--space-2);
 }
