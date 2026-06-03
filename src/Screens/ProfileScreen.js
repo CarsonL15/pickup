@@ -97,6 +97,21 @@ function ProfileScreen() {
     setRatings({ skill: stats?.skill ?? 0, sportsmanship: stats?.sportsmanship ?? 0 });
   }
 
+  // my teams + each team's record (via the team_record SQL function)
+  async function loadTeams(uid) {
+    const { data: mems } = await supabase
+      .from('team_member').select('team_id, team(name)').eq('user_id', uid);
+    if (!mems) return;
+    const withRecords = await Promise.all(
+      mems.filter(m => m.team).map(async (m) => {
+        const { data: rec } = await supabase.rpc('team_record', { p_team_id: m.team_id });
+        const r = Array.isArray(rec) ? rec[0] : rec;
+        return { id: m.team_id, name: m.team.name, wins: r?.wins ?? 0, losses: r?.losses ?? 0 };
+      })
+    );
+    setTeams(withRecords);
+  }
+
   useEffect(() => {
     if (!user) return;
     supabase
@@ -109,6 +124,7 @@ function ProfileScreen() {
         setProfile(data);
         loadFriends(data.user_id);
         loadStats(data.user_id);
+        loadTeams(data.user_id);
 
         if (channelRef.current) supabase.removeChannel(channelRef.current);
         channelRef.current = supabase
@@ -218,8 +234,11 @@ function ProfileScreen() {
           </div>
           {open === 'teams' && (
             <div className="profile-section-body">
-              {teams?.map((t, i) => (
-                <span key={i} className="profile-team-name">
+              {teams && teams.length === 0 && (
+                <span className="profile-team-name">No teams yet</span>
+              )}
+              {teams?.map(t => (
+                <span key={t.id} className="profile-team-name">
                   {t.name.toUpperCase()} {t.wins}-{t.losses}
                 </span>
               ))}
@@ -239,7 +258,7 @@ function ProfileScreen() {
       )}
 
       {showTeamsModal && (
-        <ManageTeamsModal onClose={() => setShowTeamsModal(false)} />
+        <ManageTeamsModal onClose={() => { setShowTeamsModal(false); loadTeams(profile?.user_id); }} />
       )}
 
       <div className="profile-bottom-nav">
