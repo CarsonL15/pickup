@@ -45,6 +45,12 @@ import './ProfileScreen.css';
 //      .eq('user_id', user.id);
 // ─────────────────────────────────────────────────────────────────────────────
 
+// timestamp -> "M/D"
+function formatMD(ts) {
+  const d = new Date(ts);
+  return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+
 function ProfileScreen() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -72,6 +78,40 @@ function ProfileScreen() {
     }));
   }
 
+  // win/loss record + ratings from user_stats, recent games from game_history_player
+  async function loadStats(uid) {
+    const { data: stats } = await supabase
+      .from('user_stats').select('skill, sportsmanship, wins, losses').eq('user_id', uid).maybeSingle();
+
+    const { data: games } = await supabase
+      .from('game_history_player').select('won, day')
+      .eq('user_id', uid).not('won', 'is', null)
+      .order('day', { ascending: false }).limit(5);
+
+    const recentGames = (games ?? []).map(g => ({
+      result: g.won ? 'WIN' : 'LOSS',
+      played_at: g.day ? formatMD(g.day) : '',
+    }));
+
+    setRecord({ wins: stats?.wins ?? 0, losses: stats?.losses ?? 0, recentGames });
+    setRatings({ skill: stats?.skill ?? 0, sportsmanship: stats?.sportsmanship ?? 0 });
+  }
+
+  // my teams + each team's record (via the team_record SQL function)
+  async function loadTeams(uid) {
+    const { data: mems } = await supabase
+      .from('team_member').select('team_id, team(name)').eq('user_id', uid);
+    if (!mems) return;
+    const withRecords = await Promise.all(
+      mems.filter(m => m.team).map(async (m) => {
+        const { data: rec } = await supabase.rpc('team_record', { p_team_id: m.team_id });
+        const r = Array.isArray(rec) ? rec[0] : rec;
+        return { id: m.team_id, name: m.team.name, wins: r?.wins ?? 0, losses: r?.losses ?? 0 };
+      })
+    );
+    setTeams(withRecords);
+  }
+
   useEffect(() => {
     if (!user) return;
     supabase
@@ -83,6 +123,8 @@ function ProfileScreen() {
         if (!data) return;
         setProfile(data);
         loadFriends(data.user_id);
+        loadStats(data.user_id);
+        loadTeams(data.user_id);
 
         if (channelRef.current) supabase.removeChannel(channelRef.current);
         channelRef.current = supabase
@@ -96,7 +138,7 @@ function ProfileScreen() {
     return () => {
       if (channelRef.current) supabase.removeChannel(channelRef.current);
     };
-  }, [user]);
+  }, [user?.id]);
 
   function toggle(section) {
     setOpen(prev => (prev === section ? null : section));
@@ -130,17 +172,16 @@ function ProfileScreen() {
           </div>
           {open === 'record' && (
             <div className="profile-section-body">
-              {record?.recentGames?.map((g, i) => (
+              {record?.recentGames?.length ? record.recentGames.map((g, i) => (
                 <div className="profile-game-row" key={i}>
                   <span className="profile-game-date">{g.played_at}</span>
                   <span className={`profile-game-result ${g.result === 'WIN' ? 'win' : 'loss'}`}>
                     {g.result}
                   </span>
                 </div>
-              ))}
-              <button className="profile-action-link" onClick={e => { e.stopPropagation(); navigate('/StatsScreen'); }}>
-                ALL STATS
-              </button>
+              )) : (
+                <span className="profile-game-date">No games yet</span>
+              )}
             </div>
           )}
         </div>
@@ -177,15 +218,10 @@ function ProfileScreen() {
             <div className="profile-section-body">
               {ratings && (
                 <>
-                  <span className="profile-rating-rank">
-                    {ratings.rank?.toUpperCase()} ({ratings.skill}) &rarr; {ratings.games_to_next} TO {ratings.next_rank?.toUpperCase()}
-                  </span>
+                  <span className="profile-rating-rank">SKILL: {ratings.skill}</span>
                   <span className="profile-rating-sport">SPORTSMANSHIP: {ratings.sportsmanship}</span>
                 </>
               )}
-              <button className="profile-action-link" onClick={e => e.stopPropagation()}>
-                FAQ
-              </button>
             </div>
           )}
         </div>
@@ -198,8 +234,11 @@ function ProfileScreen() {
           </div>
           {open === 'teams' && (
             <div className="profile-section-body">
-              {teams?.map((t, i) => (
-                <span key={i} className="profile-team-name">
+              {teams && teams.length === 0 && (
+                <span className="profile-team-name">No teams yet</span>
+              )}
+              {teams?.map(t => (
+                <span key={t.id} className="profile-team-name">
                   {t.name.toUpperCase()} {t.wins}-{t.losses}
                 </span>
               ))}
@@ -219,7 +258,7 @@ function ProfileScreen() {
       )}
 
       {showTeamsModal && (
-        <ManageTeamsModal onClose={() => setShowTeamsModal(false)} />
+        <ManageTeamsModal onClose={() => { setShowTeamsModal(false); loadTeams(profile?.user_id); }} />
       )}
 
       <div className="profile-bottom-nav">

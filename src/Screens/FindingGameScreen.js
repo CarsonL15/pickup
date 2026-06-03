@@ -67,7 +67,7 @@ function FindingGameScreen() {
     })();
 
     return () => { cancelled = true; if (channel) supabase.removeChannel(channel); };
-  }, [user, haveBall]);
+  }, [user?.id, haveBall]);
 
   // ── Stage 2: watch my game's roster (with usernames) + readiness ──
   useEffect(() => {

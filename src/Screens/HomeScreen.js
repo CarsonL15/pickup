@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabaseClient';
 import { getCurrentLocation } from '../getLocation';
 import LobbyInviteModal from '../components/LobbyInviteModal';
 import ModifyGameModal from '../components/ModifyGameModal';
+import PlayerDot from '../components/PlayerDot';
 import './HomeScreen.css';
 
 // '4V4' -> 4, '2V2' -> 2, etc. Returns -1 ("any") if it can't parse.
@@ -23,19 +24,124 @@ function HomeScreen() {
   const [gameSettings, setGameSettings] = useState(DEFAULT_SETTINGS);
   const [invitedPlayers, setInvitedPlayers] = useState([]);
   const [searching, setSearching] = useState(false);
+  const [myUserId, setMyUserId] = useState(null);
+  const [partyId, setPartyId] = useState(null); // my active ad-hoc party (as leader or member)
+  const [isLeader, setIsLeader] = useState(false);
+  const [partyMembers, setPartyMembers] = useState([]); // [{ user_id, username }]
+
+  // resolve my integer app_user.user_id
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    supabase.from('app_user').select('user_id').eq('auth_id', user.id).maybeSingle()
+      .then(({ data }) => { if (!cancelled && data) setMyUserId(data.user_id); });
+    return () => { cancelled = true; };
+  }, [user?.id]);
+
+  // recover my active party — as leader OR member — so both see it across
+  // re-renders/refreshes and we don't orphan parties or spin up duplicates
+  useEffect(() => {
+    if (myUserId == null) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from('party_member')
+        .select('party_id, party(party_id, leader_id, status)')
+        .eq('user_id', myUserId)
+        .order('party_member_id', { ascending: false }); // most-recent membership first
+      if (cancelled || !data) return;
+      const active = data.find(m => m.party && (m.party.status === 'forming' || m.party.status === 'queued'));
+      if (active) {
+        setPartyId(active.party_id);
+        setIsLeader(active.party.leader_id === myUserId);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [myUserId]);
+
+  // live party roster (shown on both the leader's and members' Home screens)
+  useEffect(() => {
+    if (partyId == null) return;
+    let cancelled = false;
+    async function loadMembers() {
+      const { data } = await supabase
+        .from('party_member')
+        .select('user_id, app_user(username, display_name)')
+        .eq('party_id', partyId);
+      if (cancelled || !data) return;
+      // if I'm no longer in this party (I left, was removed, or it disbanded), reset
+      if (!data.some(m => m.user_id === myUserId)) {
+        setPartyId(null);
+        setIsLeader(false);
+        setPartyMembers([]);
+        setInvitedPlayers([]);
+        return;
+      }
+      setPartyMembers(data.map(m => ({
+        user_id: m.user_id,
+        name: m.app_user?.display_name || m.app_user?.username || null,
+      })));
+    }
+    loadMembers();
+    const channel = supabase
+      .channel(`party-members-${partyId}`)
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'party_member', filter: `party_id=eq.${partyId}` },
+        () => loadMembers())
+      .subscribe();
+    return () => { cancelled = true; supabase.removeChannel(channel); };
+  }, [partyId]);
 
   async function handleLogout() {
     await supabase.auth.signOut();
     navigate('/');
   }
 
-  function handleInvite(friend) {
+  // Inviting a friend creates an ad-hoc party (lazily, on the first invite) and
+  // sends them a party_invite. They get a realtime popup to accept (PartyInviteListener).
+  async function handleInvite(friend) {
+    if (myUserId == null) return;
+    let pid = partyId;
+    if (pid == null) {
+      const { data: party, error } = await supabase
+        .from('party')
+        .insert({ leader_id: myUserId, isTeam: false, status: 'forming' })
+        .select('party_id').single();
+      if (error || !party) { alert('Could not create party: ' + (error?.message ?? '')); return; }
+      pid = party.party_id;
+      await supabase.from('party_member').insert({ party_id: pid, user_id: myUserId });
+      setPartyId(pid);
+      setIsLeader(true);
+    }
+    const { error: invErr } = await supabase
+      .from('party_invite')
+      .insert({ party_id: pid, inviter_id: myUserId, invitee_id: friend.id, status: 'pending' });
+    if (invErr) { alert('Could not send invite: ' + invErr.message); return; }
     setInvitedPlayers(prev => [...prev, friend]);
   }
 
-  // Solo queue flow: get location -> resolve our integer user_id -> insert a
-  // queue_entry row -> go to the Finding Game lobby, where realtime takes over.
-  // (Party queuing — leader inserts rows for all members — is a later step.)
+  // Leave the current party. A member just removes themselves; the leader disbands
+  // the whole party (clears invites + all members + marks it disbanded), which the
+  // other members pick up in realtime (their party_member row disappears).
+  async function handleLeaveParty() {
+    if (myUserId == null || partyId == null) return;
+    if (isLeader) {
+      await supabase.from('party_invite').delete().eq('party_id', partyId);
+      await supabase.from('party_member').delete().eq('party_id', partyId);
+      await supabase.from('party').update({ status: 'disbanded' }).eq('party_id', partyId);
+    } else {
+      await supabase.from('party_member').delete().eq('party_id', partyId).eq('user_id', myUserId);
+    }
+    setPartyId(null);
+    setIsLeader(false);
+    setPartyMembers([]);
+    setInvitedPlayers([]);
+  }
+
+  // Queue flow (solo or party leader): get my location -> queue myself (with the
+  // party_id if I have a party) -> if I'm a party leader, flip the party to
+  // 'queued' so my accepted members self-queue with their own locations
+  // (PartyInviteListener) -> go to the Finding Game lobby.
   async function handleSearch() {
     if (searching) return;
     setSearching(true);
@@ -59,17 +165,18 @@ function HomeScreen() {
 
       const isCasual = gameSettings.mode === 'casual';
 
-      // 3. queue yourself. skill_rating must be NULL for casual; a real rating for
-      //    competitive. TODO: source the competitive rating from skill_rating/user_stats.
+      // 3. queue myself (share party_id when in a party so the matchmaker groups us).
+      //    skill_rating is NULL for casual, a real rating for competitive
+      //    (TODO: source from skill_rating/user_stats; placeholder for now).
       const { error: queueErr } = await supabase.from('queue_entry').insert({
         player_id: appUser.user_id,
-        party_id: null,                       // solo for now
+        party_id: partyId,
         num_vs: parseNumVs(gameSettings.format),
         latitude: lat,
         longitude: lon,
-        distance_preference: 50,
+        distance_preference: 100,
         is_casual: isCasual,
-        skill_rating: isCasual ? null : 1000, // TODO: real competitive rating
+        skill_rating: isCasual ? null : 1000,
       });
       if (queueErr) {
         // PK conflict = already queued/in a game (queue_entry PK is player_id)
@@ -77,7 +184,12 @@ function HomeScreen() {
         return;
       }
 
-      // 4. hand off to the realtime lobby (haveBall is applied to our game_player row there)
+      // 4. if I'm leading a party, flip it to 'queued' -> members self-queue + follow
+      if (partyId != null) {
+        await supabase.from('party').update({ status: 'queued' }).eq('party_id', partyId);
+      }
+
+      // 5. hand off to the realtime lobby (haveBall is applied to our game_player row there)
       navigate('/FindingGameScreen', {
         state: {
           mode: gameSettings.mode,
@@ -91,6 +203,10 @@ function HomeScreen() {
   }
 
   const invitedIds = invitedPlayers.map(p => p.id);
+  // party members other than me, shown in the lobby slots (realtime on both screens)
+  const otherMembers = partyMembers.filter(m => m.user_id !== myUserId);
+  // solo players can always search; in a party, only the leader can
+  const canSearch = partyId == null || isLeader;
 
   return (
     <div className="screen home-screen">
@@ -114,11 +230,8 @@ function HomeScreen() {
         </div>
 
         <div className="player-slots">
-          {invitedPlayers.slice(0, 3).map(player => (
-            <div className="slot avatar" key={player.id} title={`@${player.username}`} />
-          ))}
-          {Array.from({ length: Math.max(0, 3 - invitedPlayers.length) }).map((_, i) => (
-            <div className="slot avatar empty" key={`empty-${i}`} aria-label="Player slot" />
+          {otherMembers.map(m => (
+            <PlayerDot key={m.user_id} username={m.name} />
           ))}
           <button
             className="slot add-slot"
@@ -129,9 +242,22 @@ function HomeScreen() {
           </button>
         </div>
 
-        <button className="search-btn" onClick={handleSearch} disabled={searching}>
-          {searching ? 'SEARCHING…' : 'SEARCH'}
+        <button className="search-btn" onClick={handleSearch} disabled={searching || !canSearch}>
+          {!canSearch ? 'WAITING FOR LEADER…' : searching ? 'SEARCHING…' : 'SEARCH'}
         </button>
+
+        {partyId != null && (
+          <button
+            onClick={handleLeaveParty}
+            style={{
+              background: 'none', border: 'none', color: 'var(--color-text-muted)',
+              fontFamily: 'var(--font-family)', fontWeight: 'var(--font-bold)',
+              letterSpacing: '0.08em', cursor: 'pointer', marginTop: 'var(--space-3)',
+            }}
+          >
+            {isLeader ? 'DISBAND PARTY' : 'LEAVE PARTY'}
+          </button>
+        )}
 
       </div>
 
