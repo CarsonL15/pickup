@@ -1,4 +1,4 @@
-
+import copy
 import os
 from dotenv import load_dotenv
 from supabase import Client, create_client
@@ -80,14 +80,21 @@ class JoinQueue:
         for game in gamesExistingResponse:
             JoinQueue.gamesInExistence.append(game["game_id"])
 
-
+        temp1 = []
         for game in GamesList.activeCasualGames:
             if game.gameID not in JoinQueue.gamesInExistence:
-                GamesList.activeCasualGames.remove(game)
+                temp1.append(game)
 
+        for game in temp1:
+            GamesList.activeCasualGames.remove(game)
+
+        temp2 = []
         for game in GamesList.activeCompGames:
             if game.gameID not in JoinQueue.gamesInExistence:
-                GamesList.activeCompGames.remove(game)
+                temp2.append(game)
+
+        for game in temp2:
+            GamesList.activeCompGames.remove(game)
 
         joinGamesQueueResponse = (
             supabase.table("queue_entry")
@@ -155,7 +162,7 @@ class JoinQueue:
                     .execute()
                 )
             except Exception as e:
-                print("could not insert individual players into game_player table")
+                print(f"could not insert individual players into game_player table {e}")
 
 
 
