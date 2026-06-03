@@ -91,11 +91,12 @@ export default function PartyInviteListener() {
           try { ({ lat, lon } = await getCurrentLocation()); }
           catch { alert('We need your location to join the game. Please enable location access.'); return; }
 
-          await supabase.from('queue_entry').insert({
+          const { error: queueErr } = await supabase.from('queue_entry').insert({
             player_id: myUserId, party_id: party.party_id, num_vs: numVs,
             latitude: lat, longitude: lon, distance_preference: 100,
             is_casual: isCasual, skill_rating: isCasual ? null : 1000,
           });
+          if (queueErr) { alert('Could not join the game queue: ' + queueErr.message); return; }
           navigate('/FindingGameScreen', {
             state: { mode: isCasual ? 'casual' : 'competitive', numVs },
           });

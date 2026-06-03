@@ -69,6 +69,14 @@ function HomeScreen() {
         .select('user_id, app_user(username, display_name)')
         .eq('party_id', partyId);
       if (cancelled || !data) return;
+      // if I'm no longer in this party (I left, was removed, or it disbanded), reset
+      if (!data.some(m => m.user_id === myUserId)) {
+        setPartyId(null);
+        setIsLeader(false);
+        setPartyMembers([]);
+        setInvitedPlayers([]);
+        return;
+      }
       setPartyMembers(data.map(m => ({
         user_id: m.user_id,
         name: m.app_user?.display_name || m.app_user?.username || null,
@@ -110,6 +118,24 @@ function HomeScreen() {
       .insert({ party_id: pid, inviter_id: myUserId, invitee_id: friend.id, status: 'pending' });
     if (invErr) { alert('Could not send invite: ' + invErr.message); return; }
     setInvitedPlayers(prev => [...prev, friend]);
+  }
+
+  // Leave the current party. A member just removes themselves; the leader disbands
+  // the whole party (clears invites + all members + marks it disbanded), which the
+  // other members pick up in realtime (their party_member row disappears).
+  async function handleLeaveParty() {
+    if (myUserId == null || partyId == null) return;
+    if (isLeader) {
+      await supabase.from('party_invite').delete().eq('party_id', partyId);
+      await supabase.from('party_member').delete().eq('party_id', partyId);
+      await supabase.from('party').update({ status: 'disbanded' }).eq('party_id', partyId);
+    } else {
+      await supabase.from('party_member').delete().eq('party_id', partyId).eq('user_id', myUserId);
+    }
+    setPartyId(null);
+    setIsLeader(false);
+    setPartyMembers([]);
+    setInvitedPlayers([]);
   }
 
   // Queue flow (solo or party leader): get my location -> queue myself (with the
@@ -219,6 +245,19 @@ function HomeScreen() {
         <button className="search-btn" onClick={handleSearch} disabled={searching || !canSearch}>
           {!canSearch ? 'WAITING FOR LEADER…' : searching ? 'SEARCHING…' : 'SEARCH'}
         </button>
+
+        {partyId != null && (
+          <button
+            onClick={handleLeaveParty}
+            style={{
+              background: 'none', border: 'none', color: 'var(--color-text-muted)',
+              fontFamily: 'var(--font-family)', fontWeight: 'var(--font-bold)',
+              letterSpacing: '0.08em', cursor: 'pointer', marginTop: 'var(--space-3)',
+            }}
+          >
+            {isLeader ? 'DISBAND PARTY' : 'LEAVE PARTY'}
+          </button>
+        )}
 
       </div>
 
