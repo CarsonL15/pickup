@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabaseClient';
 import './ManageFriendsModal.css';
+import UserChat from "./UserChat";
+
 
 function ManageFriendsModal({ onClose, myUserId: myUserIdProp, onFriendsChange }) {
   const { user } = useAuth();
@@ -11,6 +13,7 @@ function ManageFriendsModal({ onClose, myUserId: myUserIdProp, onFriendsChange }
   const [adding, setAdding] = useState(false);
   const [addUsername, setAddUsername] = useState('');
   const [addError, setAddError] = useState('');
+  const [selectedFriend, setSelectedFriend] = useState(null);
 
   const loadData = useCallback(async (userId) => {
     const [friendsRes, pendingRes] = await Promise.all([
@@ -144,9 +147,19 @@ function ManageFriendsModal({ onClose, myUserId: myUserIdProp, onFriendsChange }
             <div className="mf-friend-row" key={f.id}>
               <span className="mf-friend-name">@{f.username}</span>
               <button className="mf-delete-btn" onClick={() => handleDelete(f.id)} aria-label="Remove friend">X</button>
-              <button className="mf-chat-btn">CHAT</button>
+              <button className="mf-chat-btn" onClick={() => setSelectedFriend(f)}>
+                CHAT
+              </button>
             </div>
           ))}
+
+          {selectedFriend && (
+            <UserChat
+              myUserId={myUserId}
+              friendId={selectedFriend.friendUserId}
+              onClose={() => setSelectedFriend(null)}
+            />
+          )}
 
           {adding ? (
             <div className="mf-add-row">
@@ -185,7 +198,4 @@ function ManageFriendsModal({ onClose, myUserId: myUserIdProp, onFriendsChange }
 
       </div>
     </div>
-  );
-}
-
-export default ManageFriendsModal;
+  )
