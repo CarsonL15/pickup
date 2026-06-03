@@ -9,11 +9,12 @@ import './RatingScreen.css';
 //
 //   navigate('/RatingScreen', { state: { gameId, mySide } });
 //
-// Builds the queue from the permanent `game_history_player` roster, in order:
-//   1. the OTHER team   → rate sportsmanship   (skippable)
-//   2. YOUR team        → rate skill           (skippable)
-// Each rating calls the `rate_player` RPC, which adjusts the target's
-// user_stats by (rating - 3): 1→-2, 3→0, 5→+2. SKIP submits nothing.
+// Each player rates the OTHER team's sportsmanship, then YOUR team's skill (both
+// skippable), via rate_player → adjusts the target's user_stats column by
+// (rating - 3): 1→-2, 3→0, 5→+2. SKIP submits nothing.
+//
+// Skill is ALSO adjusted automatically at game finalize from the team skill
+// differential (see report_game_result); these peer ratings stack on top of that.
 //
 // Without a game_id (dev/mock) it runs on mock data and submits nothing.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -65,7 +66,7 @@ function RatingScreen() {
         (users ?? []).map(u => [u.user_id, u.display_name || u.username])
       );
 
-      // opponents first (sportsmanship), then teammates (skill)
+      // opponents first (rate sportsmanship), then teammates (rate skill)
       const opponents = others.filter(r => r.team_side !== mySide)
         .map(r => ({ id: r.user_id, username: nameById[r.user_id] ?? `#${r.user_id}`, type: 'sportsmanship' }));
       const teammates = others.filter(r => r.team_side === mySide)

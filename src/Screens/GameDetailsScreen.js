@@ -18,22 +18,10 @@ import './GameDetailsScreen.css';
 //                 everyone else goes straight to /RatingScreen.
 //
 // Captain: game_player has no is_captain column yet, so until matchmaking sets one
-// we DERIVE it — the highest-sportsmanship player on each team_side (tiebreak lowest
-// user_id) is the captain. Deterministic, so both clients agree. If a real is_captain
-// column appears later, it takes precedence automatically.
+// we DERIVE it via the game_captains() RPC — highest sportsmanship per team_side
+// (tiebreak lowest user_id). It runs server-side because user_stats RLS hides other
+// players' rows from the client, so a client-side pick would be wrong.
 // ───────────────────────────────────────────────────────────────────────────────
-
-// captain = highest sportsmanship on a team, tiebreak lowest user_id
-function pickCaptain(players) {
-  if (!players.length) return null;
-  return players.reduce((best, p) => {
-    const bs = best.sportsmanship ?? -Infinity;
-    const ps = p.sportsmanship ?? -Infinity;
-    if (ps > bs) return p;
-    if (ps === bs && p.user_id < best.user_id) return p;
-    return best;
-  });
-}
 
 function GameDetailsScreen() {
   const { state } = useLocation();
@@ -70,29 +58,17 @@ function GameDetailsScreen() {
         .eq('game_id', gameId);
       if (cancelled || !data) return;
 
-      // sportsmanship powers the derived captain (no is_captain column yet)
-      const ids = data.map((r) => r.user_id);
-      const { data: stats } = ids.length
-        ? await supabase.from('user_stats').select('user_id, sportsmanship').in('user_id', ids)
-        : { data: [] };
-      const sportById = Object.fromEntries((stats ?? []).map((s) => [s.user_id, s.sportsmanship]));
+      // captains computed server-side (RLS hides other players' sportsmanship)
+      const { data: caps } = await supabase.rpc('game_captains', { p_game_id: gameId });
+      const captainIds = new Set((caps ?? []).map((c) => c.user_id));
 
       const next = data.map((r) => ({
         user_id: r.user_id,
         team_side: r.team_side,
         username: r.app_user?.username ?? null,
         has_ball: r.has_ball,                 // undefined until the column exists
-        sportsmanship: sportById[r.user_id] ?? null,
-        is_captain: r.is_captain ?? false,    // prefer the real column when it exists
+        is_captain: captainIds.has(r.user_id),
       }));
-
-      // no real captain flag yet → derive one per side from sportsmanship
-      if (!next.some((p) => p.is_captain)) {
-        for (const side of [1, 2]) {
-          const cap = pickCaptain(next.filter((p) => p.team_side === side));
-          if (cap) cap.is_captain = true;
-        }
-      }
 
       if (!cancelled) setRoster(next);
     }
