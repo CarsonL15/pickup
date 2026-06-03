@@ -70,7 +70,6 @@ function GameDetailsScreen() {
         user_id: r.user_id,
         team_side: r.team_side,
         username: r.app_user?.username ?? null,
-        has_ball: r.has_ball,                 // undefined until the column exists
         is_captain: captainIds.has(r.user_id),
       }));
 
@@ -166,7 +165,7 @@ function GameDetailsScreen() {
             <span className="gd-team-label">YOUR TEAM</span>
             <div className="gd-circles-row">
               {yourTeam.map(p => (
-                <PlayerDot key={p.user_id} isCaptain={p.is_captain} hasBall={p.has_ball} username={p.username} />
+                <PlayerDot key={p.user_id} isCaptain={p.is_captain} username={p.username} />
               ))}
             </div>
           </div>
@@ -174,7 +173,7 @@ function GameDetailsScreen() {
             <span className="gd-team-label">THEIR TEAM</span>
             <div className="gd-circles-row">
               {theirTeam.map(p => (
-                <PlayerDot key={p.user_id} isCaptain={p.is_captain} hasBall={p.has_ball} username={p.username} />
+                <PlayerDot key={p.user_id} isCaptain={p.is_captain} username={p.username} />
               ))}
             </div>
           </div>
@@ -184,7 +183,7 @@ function GameDetailsScreen() {
           <span className="gd-team-label">PLAYERS</span>
           <div className="gd-circles-grid">
             {roster.map(p => (
-              <PlayerDot key={p.user_id} isCaptain={p.is_captain} hasBall={p.has_ball} username={p.username} />
+              <PlayerDot key={p.user_id} isCaptain={p.is_captain} username={p.username} />
             ))}
           </div>
         </div>

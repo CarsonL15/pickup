@@ -21,15 +21,16 @@ function FindingGameScreen() {
 
   const mode = state?.mode ?? 'casual';
   const numVs = state?.numVs ?? 4;
-  const haveBall = state?.haveBall ?? false;
   const maxPlayers = numVs > 0 ? numVs * 2 : null; // total slots; null when "any"
 
   const [gameId, setGameId] = useState(null);
-  const [players, setPlayers] = useState([]); // { user_id, team_side, username, has_ball, is_captain }
+  const [players, setPlayers] = useState([]); // { user_id, team_side, username, is_captain }
   const [parkName, setParkName] = useState('');
   const [showGameChat, setShowGameChat] = useState(false);
 
-  // ── Stage 1: discover my game, and stamp my "have ball" choice on my own row ──
+  // ── Stage 1: discover my game ──
+  // "Have ball" is captured by the lobby toggle only (no DB column, no dot), so
+  // there's nothing to persist here.
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
@@ -39,27 +40,22 @@ function FindingGameScreen() {
       const { data: appUser } = await supabase
         .from('app_user').select('user_id').eq('auth_id', user.id).maybeSingle();
       if (!appUser || cancelled) return;
-      const myUserId = appUser.user_id;
-
-      const markBall = () =>
-        supabase.from('game_player').update({ has_ball: haveBall }).eq('user_id', myUserId);
+      const uid = appUser.user_id;
 
       const { data: existing } = await supabase
-        .from('game_player').select('game_id').eq('user_id', myUserId).maybeSingle();
+        .from('game_player').select('game_id').eq('user_id', uid).maybeSingle();
       if (existing && !cancelled) {
-        await markBall();
         setGameId(existing.game_id);
         return;
       }
 
       channel = supabase
-        .channel(`find-me-${myUserId}`)
+        .channel(`find-me-${uid}`)
         .on(
           'postgres_changes',
-          { event: 'INSERT', schema: 'public', table: 'game_player', filter: `user_id=eq.${myUserId}` },
+          { event: 'INSERT', schema: 'public', table: 'game_player', filter: `user_id=eq.${uid}` },
           (payload) => {
             if (cancelled) return;
-            markBall();
             setGameId(payload.new.game_id);
           }
         )
@@ -67,7 +63,7 @@ function FindingGameScreen() {
     })();
 
     return () => { cancelled = true; if (channel) supabase.removeChannel(channel); };
-  }, [user?.id, haveBall]);
+  }, [user?.id]);
 
   // ── Stage 2: watch my game's roster (with usernames) + readiness ──
   useEffect(() => {
@@ -80,13 +76,12 @@ function FindingGameScreen() {
     async function loadRoster() {
       const { data } = await supabase
         .from('game_player')
-        .select('user_id, team_side, has_ball, is_captain, app_user(username)')
+        .select('user_id, team_side, is_captain, app_user(username)')
         .eq('game_id', gameId);
       if (cancelled || !data) return;
       setPlayers(data.map((r) => ({
         user_id: r.user_id,
         team_side: r.team_side,
-        has_ball: r.has_ball,
         is_captain: r.is_captain,
         username: r.app_user?.username ?? null,
       })));
@@ -155,7 +150,7 @@ function FindingGameScreen() {
         <span className="fg-players-label">PLAYERS</span>
         <div className="fg-dots">
           {players.map((p) => (
-            <PlayerDot key={p.user_id} username={p.username} hasBall={p.has_ball} isCaptain={p.is_captain} />
+            <PlayerDot key={p.user_id} username={p.username} isCaptain={p.is_captain} />
           ))}
           {Array.from({ length: emptyCount }).map((_, i) => (
             <PlayerDot key={`empty-${i}`} empty />
