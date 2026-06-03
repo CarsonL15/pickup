@@ -108,14 +108,20 @@ export default function PartyInviteListener() {
 
   async function accept() {
     if (!invite || myUserId == null) return;
-    await supabase.from('party_member').insert({ party_id: invite.party_id, user_id: myUserId });
-    await supabase.from('party_invite').update({ status: 'accepted' }).eq('invite_id', invite.invite_id);
+    const { error: memberErr } = await supabase
+      .from('party_member').insert({ party_id: invite.party_id, user_id: myUserId });
+    if (memberErr) { alert('Could not join party: ' + memberErr.message); return; }
+    const { error: inviteErr } = await supabase
+      .from('party_invite').update({ status: 'accepted' }).eq('invite_id', invite.invite_id);
+    if (inviteErr) { alert('Joined, but could not update invite: ' + inviteErr.message); }
     setInvite(null);
   }
 
   async function decline() {
     if (!invite) return;
-    await supabase.from('party_invite').update({ status: 'declined' }).eq('invite_id', invite.invite_id);
+    const { error } = await supabase
+      .from('party_invite').update({ status: 'declined' }).eq('invite_id', invite.invite_id);
+    if (error) { alert('Could not decline: ' + error.message); return; }
     setInvite(null);
   }
 
