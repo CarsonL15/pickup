@@ -11,7 +11,18 @@
   height: 72px;
   border-radius: var(--radius-full);
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: background 0.25s ease, transform 0.2s ease;
+}
+
+/* white "C" marker for the captain dot */
+.player-dot-label {
+  font-size: var(--text-lg);
+  font-weight: var(--font-black);
+  color: var(--color-text);
+  line-height: 1;
 }
 
 /* dim, empty waiting slot */

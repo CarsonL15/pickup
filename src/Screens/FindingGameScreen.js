@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabaseClient';
 import PlayerDot from '../components/PlayerDot';
 import './FindingGameScreen.css';
+import GameChat from '../components/GameChat';
 
 // ─── Finding Game (matchmaking lobby) ──────────────────────────────────────────
 // Two-stage realtime discovery:
@@ -26,6 +27,7 @@ function FindingGameScreen() {
   const [gameId, setGameId] = useState(null);
   const [players, setPlayers] = useState([]); // { user_id, team_side, username, has_ball, is_captain }
   const [parkName, setParkName] = useState('');
+  const [showGameChat, setShowGameChat] = useState(false);
 
   // ── Stage 1: discover my game, and stamp my "have ball" choice on my own row ──
   useEffect(() => {
@@ -160,7 +162,15 @@ function FindingGameScreen() {
 
       <div className="fg-actions">
         <button className="fg-action-btn" onClick={handleCancel}>CANCEL</button>
-        <button className="fg-action-btn" onClick={() => { /* TODO: game chat */ }}>CHAT</button>
+        <button className="fg-action-btn" onClick={() => { setShowGameChat(true); }}>CHAT</button>
+
+        {showGameChat && (
+            <GameChat
+          user={user}
+          game_id={gameId}
+          onClose={() => setShowGameChat(false)}
+        />
+)}
       </div>
 
       <div className="fg-bottom-nav">
