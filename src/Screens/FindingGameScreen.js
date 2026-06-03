@@ -2,18 +2,15 @@ import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabaseClient';
+import PlayerDot from '../components/PlayerDot';
 import './FindingGameScreen.css';
 
 // ─── Finding Game (matchmaking lobby) ──────────────────────────────────────────
-// Reached after the user hits SEARCH and a queue_entry row is inserted. The Python
-// matchmaker (separate process) places the user into game_player + creates the game
-// asynchronously, so this screen discovers its game in two stages:
+// Two-stage realtime discovery:
 //   1. watch for MY game_player row to appear (filtered by my user_id) -> learn game_id
-//   2. watch THAT game's roster fill (game_player INSERT/DELETE) and its is_active flip
-// When is_active flips true, the game is full -> everyone transitions to GameDetails.
-//
-// Navigation state expected from the SEARCH screen:
-//   { mode: 'casual' | 'competitive', numVs: 2 | 3 | 4 }   // numVs sizes the dot grid
+//   2. watch THAT game's roster fill (re-fetch on any game_player change, so we keep
+//      usernames joined) and its is_active flip -> transition to GameDetails.
+// Navigation state from SEARCH: { mode, numVs, haveBall }.
 // ───────────────────────────────────────────────────────────────────────────────
 
 function FindingGameScreen() {
@@ -27,27 +24,24 @@ function FindingGameScreen() {
   const maxPlayers = numVs > 0 ? numVs * 2 : null; // total slots; null when "any"
 
   const [gameId, setGameId] = useState(null);
-  const [players, setPlayers] = useState([]); // game_player rows for my game
+  const [players, setPlayers] = useState([]); // { user_id, team_side, username, has_ball, is_captain }
   const [parkName, setParkName] = useState('');
 
-  // ── Stage 1: discover my game ──
+  // ── Stage 1: discover my game, and stamp my "have ball" choice on my own row ──
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
     let channel;
 
     (async () => {
-      // auth uuid -> integer app_user.user_id
       const { data: appUser } = await supabase
         .from('app_user').select('user_id').eq('auth_id', user.id).maybeSingle();
       if (!appUser || cancelled) return;
       const myUserId = appUser.user_id;
 
-      // record my "bringing the ball" choice on my own game_player row (RLS: own row)
       const markBall = () =>
         supabase.from('game_player').update({ has_ball: haveBall }).eq('user_id', myUserId);
 
-      // the matchmaker may have already placed me
       const { data: existing } = await supabase
         .from('game_player').select('game_id').eq('user_id', myUserId).maybeSingle();
       if (existing && !cancelled) {
@@ -56,7 +50,6 @@ function FindingGameScreen() {
         return;
       }
 
-      // otherwise wait for my row to be inserted
       channel = supabase
         .channel(`find-me-${myUserId}`)
         .on(
@@ -72,9 +65,9 @@ function FindingGameScreen() {
     })();
 
     return () => { cancelled = true; if (channel) supabase.removeChannel(channel); };
-  }, [user]);
+  }, [user, haveBall]);
 
-  // ── Stage 2: watch my game's roster + readiness ──
+  // ── Stage 2: watch my game's roster (with usernames) + readiness ──
   useEffect(() => {
     if (gameId == null) return;
     let cancelled = false;
@@ -82,35 +75,42 @@ function FindingGameScreen() {
     const goToDetails = () =>
       navigate('/GameDetailsScreen', { state: { gameId, mode }, replace: true });
 
-    (async () => {
-      const { data: roster } = await supabase
-        .from('game_player').select('user_id, team_side').eq('game_id', gameId);
-      if (!cancelled && roster) setPlayers(roster);
+    async function loadRoster() {
+      const { data } = await supabase
+        .from('game_player')
+        .select('user_id, team_side, has_ball, is_captain, app_user(username)')
+        .eq('game_id', gameId);
+      if (cancelled || !data) return;
+      setPlayers(data.map((r) => ({
+        user_id: r.user_id,
+        team_side: r.team_side,
+        has_ball: r.has_ball,
+        is_captain: r.is_captain,
+        username: r.app_user?.username ?? null,
+      })));
+    }
 
+    async function loadMeta() {
       const { data: game } = await supabase
-        .from('game').select('is_active, park_id').eq('game_id', gameId).single();
+        .from('game').select('is_active, park_id').eq('game_id', gameId).maybeSingle();
       if (cancelled || !game) return;
-
       if (game.park_id != null) {
         const { data: park } = await supabase
           .from('parks').select('park_name').eq('park_id', game.park_id).maybeSingle();
         if (!cancelled && park) setParkName(park.park_name);
       }
-      if (game.is_active) goToDetails(); // already full by the time we loaded
-    })();
+      if (game.is_active) goToDetails();
+    }
+
+    loadRoster();
+    loadMeta();
 
     const channel = supabase
       .channel(`find-game-${gameId}`)
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'game_player', filter: `game_id=eq.${gameId}` },
-        (payload) => setPlayers((prev) =>
-          prev.some((p) => p.user_id === payload.new.user_id) ? prev : [...prev, payload.new])
-      )
-      .on(
-        'postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'game_player', filter: `game_id=eq.${gameId}` },
-        (payload) => setPlayers((prev) => prev.filter((p) => p.user_id !== payload.old.user_id))
+        { event: '*', schema: 'public', table: 'game_player', filter: `game_id=eq.${gameId}` },
+        () => loadRoster()
       )
       .on(
         'postgres_changes',
@@ -120,14 +120,13 @@ function FindingGameScreen() {
       .subscribe();
 
     return () => { cancelled = true; supabase.removeChannel(channel); };
-  }, [gameId]);
+  }, [gameId, mode, navigate]);
 
   async function handleCancel() {
     if (user) {
       const { data: appUser } = await supabase
         .from('app_user').select('user_id').eq('auth_id', user.id).maybeSingle();
       if (appUser) {
-        // remove from the queue if still waiting, and from a game if already placed
         await supabase.from('queue_entry').delete().eq('player_id', appUser.user_id);
         await supabase.from('game_player').delete().eq('user_id', appUser.user_id);
       }
@@ -135,9 +134,7 @@ function FindingGameScreen() {
     navigate('/HomeScreen');
   }
 
-  const filled = players.length;
-  const total = maxPlayers ?? filled;
-  const slots = Array.from({ length: total }, (_, i) => i < filled);
+  const emptyCount = maxPlayers != null ? Math.max(0, maxPlayers - players.length) : 0;
 
   return (
     <div className="screen fg-screen">
@@ -152,8 +149,11 @@ function FindingGameScreen() {
       <div className="fg-players">
         <span className="fg-players-label">PLAYERS</span>
         <div className="fg-dots">
-          {slots.map((isFilled, i) => (
-            <div key={i} className={`fg-dot ${isFilled ? 'filled' : ''}`} />
+          {players.map((p) => (
+            <PlayerDot key={p.user_id} username={p.username} hasBall={p.has_ball} isCaptain={p.is_captain} />
+          ))}
+          {Array.from({ length: emptyCount }).map((_, i) => (
+            <PlayerDot key={`empty-${i}`} empty />
           ))}
         </div>
       </div>

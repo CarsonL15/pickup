@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabaseClient';
+import PlayerDot from '../components/PlayerDot';
 import './GameDetailsScreen.css';
 
 // ─── Game Details ──────────────────────────────────────────────────────────────
@@ -15,18 +16,6 @@ import './GameDetailsScreen.css';
 // once those columns are added and the matchmaker populates them, the values flow
 // through automatically and PlayerCircle lights them up — no query change needed.
 // ───────────────────────────────────────────────────────────────────────────────
-
-function PlayerCircle({ isCaptain, hasBall, username }) {
-  let variant = '';
-  if (isCaptain) variant = 'reporter';   // red — captain
-  else if (hasBall) variant = 'ball';    // purple — ball bringer
-  return (
-    <div className={`gd-circle ${variant}`} title={username ? `@${username}` : ''}>
-      {variant === 'reporter' && <span className="gd-circle-label">C</span>}
-      {variant === 'ball' && <span className="gd-circle-label">B</span>}
-    </div>
-  );
-}
 
 function GameDetailsScreen() {
   const { state } = useLocation();
@@ -147,7 +136,7 @@ function GameDetailsScreen() {
             <span className="gd-team-label">YOUR TEAM</span>
             <div className="gd-circles-row">
               {yourTeam.map(p => (
-                <PlayerCircle key={p.user_id} isCaptain={p.is_captain} hasBall={p.has_ball} username={p.username} />
+                <PlayerDot key={p.user_id} isCaptain={p.is_captain} hasBall={p.has_ball} username={p.username} />
               ))}
             </div>
           </div>
@@ -155,7 +144,7 @@ function GameDetailsScreen() {
             <span className="gd-team-label">THEIR TEAM</span>
             <div className="gd-circles-row">
               {theirTeam.map(p => (
-                <PlayerCircle key={p.user_id} isCaptain={p.is_captain} hasBall={p.has_ball} username={p.username} />
+                <PlayerDot key={p.user_id} isCaptain={p.is_captain} hasBall={p.has_ball} username={p.username} />
               ))}
             </div>
           </div>
@@ -165,7 +154,7 @@ function GameDetailsScreen() {
           <span className="gd-team-label">PLAYERS</span>
           <div className="gd-circles-grid">
             {roster.map(p => (
-              <PlayerCircle key={p.user_id} isCaptain={p.is_captain} hasBall={p.has_ball} username={p.username} />
+              <PlayerDot key={p.user_id} isCaptain={p.is_captain} hasBall={p.has_ball} username={p.username} />
             ))}
           </div>
         </div>
