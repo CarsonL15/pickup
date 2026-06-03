@@ -40,7 +40,7 @@ function LobbyInviteModal({ onClose, onInvite, invitedIds = [] }) {
     }
 
     fetchFriends();
-  }, [user]);
+  }, [user?.id]);
 
   const filtered = friends.filter(f =>
     f.username.toLowerCase().includes(search.toLowerCase())

@@ -24,7 +24,7 @@ export default function PartyInviteListener() {
     supabase.from('app_user').select('user_id').eq('auth_id', user.id).maybeSingle()
       .then(({ data }) => { if (!cancelled && data) setMyUserId(data.user_id); });
     return () => { cancelled = true; };
-  }, [user]);
+  }, [user?.id]);
 
   // incoming party invites
   useEffect(() => {

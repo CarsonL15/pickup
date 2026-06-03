@@ -26,9 +26,6 @@ function ManageFriendsModal({ onClose, myUserId: myUserIdProp, onFriendsChange }
         .eq('status', 'pending'),
     ]);
 
-    console.log('[Friends] friendsRes data:', friendsRes.data, 'error:', friendsRes.error);
-    console.log('[Friends] pendingRes data:', pendingRes.data, 'error:', pendingRes.error);
-
     if (friendsRes.data) {
       setFriends(friendsRes.data.map(r => {
         const friend = r.requester_id === userId ? r.receiver : r.requester;
@@ -62,11 +59,10 @@ function ManageFriendsModal({ onClose, myUserId: myUserIdProp, onFriendsChange }
           loadData(data.user_id);
         }
       });
-  }, [user, myUserIdProp, loadData]);
+  }, [user?.id, myUserIdProp, loadData]);
 
   async function handleDelete(friendshipId) {
     const { error } = await supabase.from('friendship').delete().eq('friendship_id', friendshipId);
-    console.log('[Friends] delete error:', error);
     if (!error) {
       setFriends(prev => prev.filter(f => f.id !== friendshipId));
       onFriendsChange?.();
@@ -98,6 +94,18 @@ function ManageFriendsModal({ onClose, myUserId: myUserIdProp, onFriendsChange }
       return;
     }
 
+    // block duplicates: any existing friendship/request in EITHER direction
+    const { data: existingRows } = await supabase
+      .from('friendship')
+      .select('status')
+      .or(`and(requester_id.eq.${myUserId},receiver_id.eq.${target.user_id}),and(requester_id.eq.${target.user_id},receiver_id.eq.${myUserId})`);
+    if (existingRows && existingRows.length > 0) {
+      setAddError(existingRows.some(r => r.status === 'accepted')
+        ? 'You are already friends.'
+        : 'A friend request already exists.');
+      return;
+    }
+
     const { error } = await supabase
       .from('friendship')
       .insert({ requester_id: myUserId, receiver_id: target.user_id, status: 'pending' });
@@ -116,7 +124,7 @@ function ManageFriendsModal({ onClose, myUserId: myUserIdProp, onFriendsChange }
       .from('friendship')
       .update({ status: 'accepted' })
       .eq('friendship_id', requestId);
-    console.log('[Friends] accept error:', error);
+    if (error) { setAddError('Could not accept request.'); return; }
     setPending(prev => prev.filter(p => p.id !== requestId));
     loadData(myUserId);
     onFriendsChange?.();

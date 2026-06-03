@@ -96,7 +96,7 @@ function ProfileScreen() {
     return () => {
       if (channelRef.current) supabase.removeChannel(channelRef.current);
     };
-  }, [user]);
+  }, [user?.id]);
 
   function toggle(section) {
     setOpen(prev => (prev === section ? null : section));
