@@ -23,6 +23,7 @@ function FindingGameScreen() {
 
   const mode = state?.mode ?? 'casual';
   const numVs = state?.numVs ?? 4;
+  const haveBall = state?.haveBall ?? false;
   const maxPlayers = numVs > 0 ? numVs * 2 : null; // total slots; null when "any"
 
   const [gameId, setGameId] = useState(null);
@@ -42,10 +43,15 @@ function FindingGameScreen() {
       if (!appUser || cancelled) return;
       const myUserId = appUser.user_id;
 
+      // record my "bringing the ball" choice on my own game_player row (RLS: own row)
+      const markBall = () =>
+        supabase.from('game_player').update({ has_ball: haveBall }).eq('user_id', myUserId);
+
       // the matchmaker may have already placed me
       const { data: existing } = await supabase
         .from('game_player').select('game_id').eq('user_id', myUserId).maybeSingle();
       if (existing && !cancelled) {
+        await markBall();
         setGameId(existing.game_id);
         return;
       }
@@ -56,7 +62,11 @@ function FindingGameScreen() {
         .on(
           'postgres_changes',
           { event: 'INSERT', schema: 'public', table: 'game_player', filter: `user_id=eq.${myUserId}` },
-          (payload) => { if (!cancelled) setGameId(payload.new.game_id); }
+          (payload) => {
+            if (cancelled) return;
+            markBall();
+            setGameId(payload.new.game_id);
+          }
         )
         .subscribe();
     })();

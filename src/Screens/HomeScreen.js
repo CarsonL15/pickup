@@ -77,9 +77,13 @@ function HomeScreen() {
         return;
       }
 
-      // 4. hand off to the realtime lobby
+      // 4. hand off to the realtime lobby (haveBall is applied to our game_player row there)
       navigate('/FindingGameScreen', {
-        state: { mode: gameSettings.mode, numVs: parseNumVs(gameSettings.format) },
+        state: {
+          mode: gameSettings.mode,
+          numVs: parseNumVs(gameSettings.format),
+          haveBall: gameSettings.haveBall,
+        },
       });
     } finally {
       setSearching(false);
