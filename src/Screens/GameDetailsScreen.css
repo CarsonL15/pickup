@@ -9,7 +9,9 @@
 
 /* ── Title ── */
 .gd-title {
-  font-size: var(--text-hero);
+  /* "DETAILS" is 7 chars vs the hero token's 4-char "PLAY"/"NOW", so the shared
+     --text-hero clamp overflows the 430px frame. Cap it lower for this word. */
+  font-size: clamp(3.5rem, 18vw, 5.5rem);
   font-weight: var(--font-black);
   line-height: 0.88;
   letter-spacing: -0.02em;
