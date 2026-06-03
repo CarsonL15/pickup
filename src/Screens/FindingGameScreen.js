@@ -162,4 +162,27 @@ function FindingGameScreen() {
 
       <div className="fg-actions">
         <button className="fg-action-btn" onClick={handleCancel}>CANCEL</button>
-        <button class
+        <button className="fg-action-btn" onClick={() => { setShowGameChat(true); }}>CHAT</button>
+
+        {showGameChat && (
+            <GameChat
+          user={user}
+          game_id={gameId}
+          onClose={() => setShowGameChat(false)}
+        />
+)}
+      </div>
+
+      <div className="fg-bottom-nav">
+        <button aria-label="Profile" onClick={() => navigate('/ProfileScreen')}>
+          <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export default FindingGameScreen;
