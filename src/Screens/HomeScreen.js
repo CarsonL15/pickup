@@ -24,7 +24,9 @@ function HomeScreen() {
   const [invitedPlayers, setInvitedPlayers] = useState([]);
   const [searching, setSearching] = useState(false);
   const [myUserId, setMyUserId] = useState(null);
-  const [partyId, setPartyId] = useState(null); // set once we invite someone (ad-hoc party)
+  const [partyId, setPartyId] = useState(null); // my active ad-hoc party (as leader or member)
+  const [isLeader, setIsLeader] = useState(false);
+  const [partyMembers, setPartyMembers] = useState([]); // [{ user_id, username }]
 
   // resolve my integer app_user.user_id
   useEffect(() => {
@@ -35,17 +37,47 @@ function HomeScreen() {
     return () => { cancelled = true; };
   }, [user?.id]);
 
-  // recover an existing 'forming' party I lead, so re-renders/refreshes don't
-  // orphan it and spin up duplicates (partyId is otherwise ephemeral state)
+  // recover my active party — as leader OR member — so both see it across
+  // re-renders/refreshes and we don't orphan parties or spin up duplicates
   useEffect(() => {
     if (myUserId == null) return;
     let cancelled = false;
-    supabase.from('party').select('party_id')
-      .eq('leader_id', myUserId).eq('status', 'forming')
-      .order('party_id', { ascending: false }).limit(1).maybeSingle()
-      .then(({ data }) => { if (!cancelled && data) setPartyId(data.party_id); });
+    (async () => {
+      const { data } = await supabase
+        .from('party_member')
+        .select('party_id, party(party_id, leader_id, status)')
+        .eq('user_id', myUserId);
+      if (cancelled || !data) return;
+      const active = data.find(m => m.party && (m.party.status === 'forming' || m.party.status === 'queued'));
+      if (active) {
+        setPartyId(active.party_id);
+        setIsLeader(active.party.leader_id === myUserId);
+      }
+    })();
     return () => { cancelled = true; };
   }, [myUserId]);
+
+  // live party roster (shown on both the leader's and members' Home screens)
+  useEffect(() => {
+    if (partyId == null) return;
+    let cancelled = false;
+    async function loadMembers() {
+      const { data } = await supabase
+        .from('party_member')
+        .select('user_id, app_user(username)')
+        .eq('party_id', partyId);
+      if (cancelled || !data) return;
+      setPartyMembers(data.map(m => ({ user_id: m.user_id, username: m.app_user?.username ?? null })));
+    }
+    loadMembers();
+    const channel = supabase
+      .channel(`party-members-${partyId}`)
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'party_member', filter: `party_id=eq.${partyId}` },
+        () => loadMembers())
+      .subscribe();
+    return () => { cancelled = true; supabase.removeChannel(channel); };
+  }, [partyId]);
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -66,6 +98,7 @@ function HomeScreen() {
       pid = party.party_id;
       await supabase.from('party_member').insert({ party_id: pid, user_id: myUserId });
       setPartyId(pid);
+      setIsLeader(true);
     }
     const { error: invErr } = await supabase
       .from('party_invite')
@@ -139,6 +172,10 @@ function HomeScreen() {
   }
 
   const invitedIds = invitedPlayers.map(p => p.id);
+  // party members other than me, shown in the lobby slots (realtime on both screens)
+  const otherMembers = partyMembers.filter(m => m.user_id !== myUserId);
+  // solo players can always search; in a party, only the leader can
+  const canSearch = partyId == null || isLeader;
 
   return (
     <div className="screen home-screen">
@@ -162,10 +199,10 @@ function HomeScreen() {
         </div>
 
         <div className="player-slots">
-          {invitedPlayers.slice(0, 3).map(player => (
-            <div className="slot avatar" key={player.id} title={`@${player.username}`} />
+          {otherMembers.slice(0, 3).map(m => (
+            <div className="slot avatar" key={m.user_id} title={m.username ? `@${m.username}` : ''} />
           ))}
-          {Array.from({ length: Math.max(0, 3 - invitedPlayers.length) }).map((_, i) => (
+          {Array.from({ length: Math.max(0, 3 - otherMembers.length) }).map((_, i) => (
             <div className="slot avatar empty" key={`empty-${i}`} aria-label="Player slot" />
           ))}
           <button
@@ -177,8 +214,8 @@ function HomeScreen() {
           </button>
         </div>
 
-        <button className="search-btn" onClick={handleSearch} disabled={searching}>
-          {searching ? 'SEARCHING…' : 'SEARCH'}
+        <button className="search-btn" onClick={handleSearch} disabled={searching || !canSearch}>
+          {!canSearch ? 'WAITING FOR LEADER…' : searching ? 'SEARCHING…' : 'SEARCH'}
         </button>
 
       </div>

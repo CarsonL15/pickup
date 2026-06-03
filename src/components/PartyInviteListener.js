@@ -118,8 +118,9 @@ export default function PartyInviteListener() {
       .from('party_invite').update({ status: 'accepted' }).eq('invite_id', invite.invite_id);
     if (inviteErr) { alert('Joined, but could not update invite: ' + inviteErr.message); }
     setInvite(null);
-    // head into the lobby to wait; the leader's SEARCH will queue me (status -> 'queued')
-    navigate('/FindingGameScreen');
+    // go to Home and wait there with the party shown; the leader's SEARCH
+    // (party.status -> 'queued') is what pulls me into the Finding Game lobby.
+    navigate('/HomeScreen');
   }
 
   async function decline() {
