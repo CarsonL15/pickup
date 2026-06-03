@@ -102,9 +102,15 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-start;
-  gap: var(--space-4);
-  max-width: 340px;
+  gap: var(--space-3);
+  max-width: 360px;     /* 5 bubbles per row → a full 5v5 (10) packs to 2 rows */
 }
+
+/* Shrink the player bubbles so 5 fit per row (5×60 + 4 gaps ≈ 348 ≤ 360).
+   Keeps a 9–10 player lobby to 2 rows so the layout doesn't crowd the title. */
+.fg-players .player-dot-wrap { width: 60px; }
+.fg-players .player-dot      { width: 60px; height: 60px; }
+.fg-players .player-dot-name { max-width: 60px; }
 
 .fg-dot {
   width: 72px;
