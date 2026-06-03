@@ -86,46 +86,51 @@ export default function UserChat({ myUserId, friendId, onClose }) {
 };
 
   return (
-    <div className="screen">
-      <div className="chat-screen">
+    <div className="chat-overlay friend-chat-overlay" onClick={onClose}>
+      <div className="chat-screen friend-chat-screen" onClick={(e) => e.stopPropagation()}>
+        <div className="friend-chat-header">
+          <span>FRIEND CHAT</span>
+          <button className="friend-chat-close" type="button" onClick={onClose} aria-label="Close chat">×</button>
+        </div>
 
-        <div className="messages">
+        <div className="messages friend-chat-messages">
           {messages.map((msg) => {
             const isMe = msg.sender_id === myUserId;
 
             return (
               <div
                 key={msg.id}
-                className={isMe ? "user-message" : "friend-message"}
+                className={`friend-chat-row ${isMe ? "is-me" : "is-friend"}`}
               >
-                <p>{msg.content}</p>
-                
-                <p className="message-time">
-                  {new Date(msg.created_at).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </p>
+                <div className={isMe ? "user-message" : "friend-message"}>
+                  <p>{msg.content}</p>
+                </div>
+
+                <div className="friend-chat-meta">
+                  <span className="message-time">
+                    {new Date(msg.created_at).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                </div>
               </div>
             );
           })}
         </div>
 
-        <form onSubmit={sending} className="chat-input-container">
+        <form onSubmit={sending} className="chat-input-container friend-chat-input-container">
           <input
             type="text"
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Type a message..."
           />
-          <button type="submit">Send</button>
+          <button type="submit">SEND</button>
         </form>
-
-        <button onClick={onClose}>Close</button>
 
       </div>
     </div>
   );
 }
-
 

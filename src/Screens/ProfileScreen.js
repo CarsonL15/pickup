@@ -114,29 +114,35 @@ function ProfileScreen() {
 
   useEffect(() => {
     if (!user) return;
+    let cancelled = false;
+    let channel = null;
+
     supabase
       .from('app_user')
       .select('username, display_name, user_id')
       .eq('auth_id', user.id)
       .single()
       .then(({ data }) => {
-        if (!data) return;
+        if (!data || cancelled) return;
         setProfile(data);
         loadFriends(data.user_id);
         loadStats(data.user_id);
         loadTeams(data.user_id);
 
         if (channelRef.current) supabase.removeChannel(channelRef.current);
-        channelRef.current = supabase
-          .channel(`friendship-${data.user_id}`)
+        channel = supabase
+          .channel(`friendship-${data.user_id}-${Date.now()}`)
           .on('postgres_changes', { event: '*', schema: 'public', table: 'friendship' }, () => {
             loadFriends(data.user_id);
           })
           .subscribe();
+        channelRef.current = channel;
       });
 
     return () => {
-      if (channelRef.current) supabase.removeChannel(channelRef.current);
+      cancelled = true;
+      if (channel) supabase.removeChannel(channel);
+      if (channelRef.current === channel) channelRef.current = null;
     };
   }, [user?.id]);
 

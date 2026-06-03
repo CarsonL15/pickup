@@ -114,8 +114,15 @@
   line-height: 1;
 }
 
-/* ── Leave button (casual only) ── */
-.gd-leave-btn {
+/* ── Leave / Chat ── */
+.gd-actions {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 var(--space-2);
+}
+
+.gd-action-btn {
   background: none;
   border: none;
   color: var(--color-text);
