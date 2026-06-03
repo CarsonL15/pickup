@@ -5,6 +5,7 @@ import { supabase } from '../supabaseClient';
 import { getCurrentLocation } from '../getLocation';
 import LobbyInviteModal from '../components/LobbyInviteModal';
 import ModifyGameModal from '../components/ModifyGameModal';
+import PlayerDot from '../components/PlayerDot';
 import './HomeScreen.css';
 
 // '4V4' -> 4, '2V2' -> 2, etc. Returns -1 ("any") if it can't parse.
@@ -46,7 +47,8 @@ function HomeScreen() {
       const { data } = await supabase
         .from('party_member')
         .select('party_id, party(party_id, leader_id, status)')
-        .eq('user_id', myUserId);
+        .eq('user_id', myUserId)
+        .order('party_member_id', { ascending: false }); // most-recent membership first
       if (cancelled || !data) return;
       const active = data.find(m => m.party && (m.party.status === 'forming' || m.party.status === 'queued'));
       if (active) {
@@ -64,10 +66,13 @@ function HomeScreen() {
     async function loadMembers() {
       const { data } = await supabase
         .from('party_member')
-        .select('user_id, app_user(username)')
+        .select('user_id, app_user(username, display_name)')
         .eq('party_id', partyId);
       if (cancelled || !data) return;
-      setPartyMembers(data.map(m => ({ user_id: m.user_id, username: m.app_user?.username ?? null })));
+      setPartyMembers(data.map(m => ({
+        user_id: m.user_id,
+        name: m.app_user?.display_name || m.app_user?.username || null,
+      })));
     }
     loadMembers();
     const channel = supabase
@@ -199,11 +204,8 @@ function HomeScreen() {
         </div>
 
         <div className="player-slots">
-          {otherMembers.slice(0, 3).map(m => (
-            <div className="slot avatar" key={m.user_id} title={m.username ? `@${m.username}` : ''} />
-          ))}
-          {Array.from({ length: Math.max(0, 3 - otherMembers.length) }).map((_, i) => (
-            <div className="slot avatar empty" key={`empty-${i}`} aria-label="Player slot" />
+          {otherMembers.map(m => (
+            <PlayerDot key={m.user_id} username={m.name} />
           ))}
           <button
             className="slot add-slot"
