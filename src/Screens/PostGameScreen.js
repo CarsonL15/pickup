@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import './PostGameScreen.css';
@@ -32,6 +32,38 @@ function PostGameScreen() {
   function goRate() {
     navigate('/RatingScreen', { state: { gameId, mySide } });
   }
+
+  // While this captain waits, the other captain's confirmation (finalize) — or a
+  // force-end after repeated disputes — deletes the game row. Watch for that and
+  // auto-advance to ratings; otherwise the first reporter is stuck on "waiting"
+  // forever once the other one selects.
+  useEffect(() => {
+    if (phase !== 'waiting' || usingMock || gameId == null) return;
+    let done = false;
+    const advance = () => {
+      if (done) return;
+      done = true;
+      navigate('/RatingScreen', { state: { gameId, mySide } });
+    };
+
+    // Guard the race where finalize happened before this subscription attached.
+    (async () => {
+      const { data } = await supabase
+        .from('game').select('game_id').eq('game_id', gameId).maybeSingle();
+      if (!data) advance();
+    })();
+
+    const channel = supabase
+      .channel(`postgame-${gameId}`)
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'game', filter: `game_id=eq.${gameId}` },
+        advance
+      )
+      .subscribe();
+
+    return () => { done = true; supabase.removeChannel(channel); };
+  }, [phase, usingMock, gameId, mySide, navigate]);
 
   async function handleResult(result) {
     if (submitting) return;
