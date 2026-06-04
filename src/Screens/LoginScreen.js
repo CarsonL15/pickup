@@ -1,66 +1,97 @@
-import {Link} from "react-router-dom";
-import {RouterProvider} from "react-router-dom";
-import {HomeScreen} from "./HomeScreen";
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { supabase } from '../supabaseClient';
 
-function checkInfo(){
-			let userName = "", password = "", valid = false;
-			let userInfo = {};
-			const loginText = document.getElementById("usernameValidText");
-			
-			userName = document.getElementById("usernameTextBox").value;
-			password = document.getElementById("passwordTextBox").value;
-			
-			if(userName == "war" && password == "Bruh"){
-				loginText.style.color = "#00ff00";
-				loginText.textContent = "login succesful";
-				valid = true;
-			}else{
-				loginText.style.color = "#ff0000";
-				loginText.textContent = "invalid username or password";
-				valid = false;
-			}
-			
-			HomeScreen("hi");
-			if(valid){
-				
-				
-			}
-}
+function LoginScreen() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
+  async function handleLogin(e) {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
 
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-function createProfileScreen(){
-	
-	
-}
+    setIsLoading(false);
 
-function LoginScreen(){
-	return( <>
-	
-	<div className="mainBackground">
+    if (error) {
+      setError(error.message);
+    } else {
+      navigate('/HomeScreen');
+    }
+  }
 
-	<div className="container">
-		
-		<div className="welcomeMessage">
-			<h1> Please Log In </h1>
-		</div>
-		<div className="userInfo">
-			<p>UserName </p>
-			<p id="usernameValidText"></p>
-			<input id="usernameTextBox"/>
-			<p>Password </p>
-			<p id="passwordVaildText"></p>
-			<input type="password" id="passwordTextBox"/>
-		</div>
-		<div>
-			<Link to="/"><button>cancel</button></Link>
-			<button onClick={checkInfo}>login</button>
-		</div>
-	</div>
-	
-	</div>
-	
-	</>);
+  return (
+    <div className="screen" style={{ justifyContent: 'center' }}>
+      <h1 className="text-accent" style={{ marginBottom: 'var(--space-8)' }}>Log In</h1>
+      <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)', width: '100%' }}>
+        <div>
+          <label style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginBottom: 'var(--space-1)', display: 'block' }}>Email</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            style={{
+              width: '100%',
+              padding: 'var(--space-3) var(--space-4)',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--color-text-muted)',
+              background: 'var(--color-surface)',
+              color: 'var(--color-text)',
+              fontFamily: 'var(--font-family)',
+              fontSize: 'var(--text-base)',
+            }}
+          />
+        </div>
+        <div>
+          <label style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginBottom: 'var(--space-1)', display: 'block' }}>Password</label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            style={{
+              width: '100%',
+              padding: 'var(--space-3) var(--space-4)',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--color-text-muted)',
+              background: 'var(--color-surface)',
+              color: 'var(--color-text)',
+              fontFamily: 'var(--font-family)',
+              fontSize: 'var(--text-base)',
+            }}
+          />
+        </div>
+        {error && (
+          <div style={{
+            background: 'rgba(255, 0, 0, 0.15)',
+            border: '1px solid rgba(255, 0, 0, 0.4)',
+            borderRadius: 'var(--radius-md)',
+            padding: 'var(--space-3) var(--space-4)',
+            color: '#ff6b6b',
+            fontSize: 'var(--text-sm)',
+            fontWeight: 'var(--font-bold)',
+          }}>{error}</div>
+        )}
+        <div style={{ marginTop: 'var(--space-8)', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+          <button type="submit" className="btn btn-accent" style={{ margin: 0 }} disabled={isLoading}>
+            {isLoading ? 'Logging in...' : 'Login'}
+          </button>
+          <Link to="/" style={{ textDecoration: 'none' }}>
+            <button type="button" className="btn btn-primary" style={{ margin: 0 }}>Cancel</button>
+          </Link>
+        </div>
+      </form>
+    </div>
+  );
 }
 
 export default LoginScreen;

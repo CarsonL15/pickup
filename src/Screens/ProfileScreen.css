@@ -1,0 +1,174 @@
+.profile-screen {
+  padding-bottom: 72px;
+}
+
+/* ─── Name / badge ───────────────────────────────────────────────────────────── */
+
+.profile-name-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+  padding-top: var(--space-10);
+}
+
+.profile-name {
+  font-size: 2.5rem;
+  font-weight: var(--font-black);
+  color: var(--color-text);
+  line-height: 1;
+}
+
+.profile-badge {
+  font-size: var(--text-sm);
+  font-weight: var(--font-black);
+  color: var(--color-accent);
+  letter-spacing: 0.1em;
+}
+
+/* ─── Accordion sections ─────────────────────────────────────────────────────── */
+
+.profile-sections {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.profile-section {
+  border-bottom: 1px solid var(--color-text-muted);
+  padding: var(--space-4) 0;
+  cursor: pointer;
+  user-select: none;
+}
+
+.profile-section-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.profile-section-label {
+  font-size: var(--text-base);
+  font-weight: var(--font-black);
+  color: var(--color-text);
+  letter-spacing: 0.05em;
+}
+
+.profile-section-value {
+  font-size: var(--text-base);
+  font-weight: var(--font-bold);
+  color: var(--color-accent);
+  letter-spacing: 0.05em;
+}
+
+.profile-section--last {
+  border-bottom: none;
+}
+
+.profile-section-body {
+  margin-top: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* RECORD rows */
+.profile-game-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.profile-game-date {
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  font-weight: var(--font-normal);
+}
+
+.profile-game-result {
+  font-size: var(--text-sm);
+  font-weight: var(--font-black);
+  letter-spacing: 0.05em;
+}
+
+.profile-game-result.win  { color: var(--color-accent); }
+.profile-game-result.loss { color: var(--color-text-muted); }
+
+/* FRIENDS rows */
+.profile-friend-name {
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  font-weight: var(--font-normal);
+}
+
+/* RATINGS rows */
+.profile-rating-rank,
+.profile-rating-sport {
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  font-weight: var(--font-normal);
+}
+
+/* TEAMS rows */
+.profile-team-name {
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  font-weight: var(--font-normal);
+}
+
+.profile-action-link {
+  align-self: flex-end;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--color-accent);
+  font-family: var(--font-family);
+  font-size: var(--text-xs);
+  font-weight: var(--font-black);
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* ─── Logout ─────────────────────────────────────────────────────────────────── */
+
+.profile-logout {
+  width: 100%;
+  background: none;
+  border: none;
+  padding: var(--space-8) 0 var(--space-4);
+  color: var(--color-text);
+  font-family: var(--font-family);
+  font-size: var(--text-base);
+  font-weight: var(--font-black);
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  text-align: center;
+}
+
+/* ─── Bottom nav ─────────────────────────────────────────────────────────────── */
+
+.profile-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 430px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-4) var(--page-padding-x);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+.profile-bottom-nav button {
+  background: none;
+  border: none;
+  color: var(--color-text);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+}

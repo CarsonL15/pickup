@@ -1,0 +1,171 @@
+.fg-screen {
+  height: 100svh;
+  overflow: hidden;
+  justify-content: space-between;
+  align-items: center;
+  text-align: center;
+  padding-bottom: 88px;
+}
+
+/* ── Title ── */
+.fg-title {
+  /* "FINDING" is 7 chars vs the hero token's 4-char "PLAY"/"NOW", so the shared
+     --text-hero clamp overflows the 430px frame. Cap it lower for this word. */
+  font-size: clamp(3.5rem, 18vw, 5.5rem);
+  font-weight: var(--font-black);
+  line-height: 0.88;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+  text-transform: uppercase;
+  margin: 0;
+  padding-top: var(--space-10);
+  width: 100%;
+  text-align: left;
+}
+
+/* Animated ellipsis trailing "GAME" — signals matchmaking is in progress.
+   Dots fade in sequence (left→right) on a loop. Accent color to read as activity. */
+.fg-title-dots {
+  display: inline-block;
+  margin-left: 0.08em;
+  color: var(--color-icon);
+}
+
+.fg-title-dots span {
+  animation: fg-dot-fade 1.4s ease-in-out infinite both;
+}
+.fg-title-dots span:nth-child(2) { animation-delay: 0.2s; }
+.fg-title-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes fg-dot-fade {
+  0%, 70%, 100% { opacity: 0.2; }
+  35%            { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fg-title-dots span { animation: none; opacity: 0.6; }
+}
+
+/* ── Mode / sport / park ── */
+.fg-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  gap: var(--space-1);
+}
+
+.fg-mode {
+  font-size: var(--text-xl);
+  font-weight: var(--font-black);
+  color: var(--color-accent);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.fg-sport {
+  font-size: var(--text-xl);
+  font-weight: var(--font-black);
+  color: var(--color-text);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.fg-park {
+  font-size: var(--text-base);
+  font-weight: var(--font-black);
+  color: var(--color-text);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-top: var(--space-2);
+}
+
+/* ── Players ── */
+.fg-players {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-4);
+  width: 100%;
+}
+
+.fg-players-label {
+  font-size: var(--text-xl);
+  font-weight: var(--font-black);
+  color: var(--color-text);
+  letter-spacing: 0.05em;
+}
+
+.fg-dots {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: var(--space-3);
+  max-width: 360px;     /* 5 bubbles per row → a full 5v5 (10) packs to 2 rows */
+}
+
+/* Shrink the player bubbles so 5 fit per row (5×60 + 4 gaps ≈ 348 ≤ 360).
+   Keeps a 9–10 player lobby to 2 rows so the layout doesn't crowd the title. */
+.fg-players .player-dot-wrap { width: 60px; }
+.fg-players .player-dot      { width: 60px; height: 60px; }
+.fg-players .player-dot-name { max-width: 60px; }
+
+.fg-dot {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-full);
+  background: var(--color-icon);   /* empty slot — muted gray */
+  flex-shrink: 0;
+  transition: background 0.2s ease;
+}
+
+.fg-dot.filled {
+  background: var(--color-text);   /* joined player — white */
+}
+
+/* ── Chat ── */
+.fg-actions {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+  padding: 0 var(--space-2);
+}
+
+.fg-action-btn {
+  background: none;
+  border: none;
+  color: var(--color-text);
+  font-family: var(--font-family);
+  font-size: var(--text-xl);
+  font-weight: var(--font-black);
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* ── Bottom nav ── */
+.fg-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 430px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: var(--space-4) var(--page-padding-x);
+  background-color: var(--color-bg);
+}
+
+.fg-bottom-nav button {
+  background: none;
+  border: none;
+  color: var(--color-text);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+}
