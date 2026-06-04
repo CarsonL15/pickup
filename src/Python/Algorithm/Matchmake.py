@@ -13,12 +13,12 @@ def casual(activeGames : list[Game],joiningPlayers : list[Player]):
     for player in joiningPlayers:
 
 
-
+        i = 0
         for game in activeGames:
             if game.playerCanJoinCasual(player):
                 player.potentialGameIndex[player.parkPriority.index(
-                    game.parkID)] = game.gameID  # sets the corresponding list that this park has a game
-
+                    game.parkID)] = i  # sets the corresponding list that this park has a game
+            i += 1
 
 
         if player.potentialGameIndex.count(-1) < len(player.potentialGameIndex): # if there is a game within range
@@ -62,12 +62,12 @@ def competitive(activeGames : list[Game],joiningPlayers : list[Player]):
     for player in joiningPlayers:
 
 
-
+        i = 0
         for game in activeGames:
             if game.playerCanJoinCompetitive(player):
                 player.potentialGameIndex[player.parkPriority.index(
-                    game.parkID)] = game.gameID  # sets the corresponding list that this park has a game
-
+                    game.parkID)] = i  # sets the corresponding list that this park has a game
+            i += 1
 
 
 
@@ -97,12 +97,12 @@ def teamCasual(activeGames : list[Game] ,joiningTeams : list[Team]):
 
     for team in joiningTeams:
 
-
+        i = 0
         for game in activeGames:
             if game.teamCanJoinCasual(team):
                 team.potentialGameIndex[team.parkPriority.index(
-                    game.parkID)] = game.gameID  # sets the corresponding list that this park has a game
-
+                    game.parkID)] = i  # sets the corresponding list that this park has a game
+            i += 1
 
         if team.potentialGameIndex.count(-1) < len(team.potentialGameIndex): # if there is a game within range
 
@@ -130,12 +130,12 @@ def teamCompetitive(activeGames : list[Game] ,joiningTeams : list[Team]):
 
     for team in joiningTeams:
 
-
+        i = 0
         for game in activeGames:
             if game.teamCanJoinCompetitive(team):
                 team.potentialGameIndex[team.parkPriority.index(
-                    game.parkID)] = game.gameID  # sets the corresponding list that this park has a game
-
+                    game.parkID)] = i  # sets the corresponding list that this park has a game
+            i += 1
 
 
         if team.potentialGameIndex.count(-1) < len(team.potentialGameIndex): # if there is a game within range

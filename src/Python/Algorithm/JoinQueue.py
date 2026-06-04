@@ -1,9 +1,10 @@
-
+import copy
 import os
 from dotenv import load_dotenv
 from supabase import Client, create_client
 
 from Python.Algorithm.Game import Game
+from Python.Algorithm.GamesList import GamesList
 from Python.Algorithm.Parks import Park
 from Python.Algorithm.Player import Player
 from Python.Algorithm.Team import Team
@@ -24,12 +25,12 @@ class JoinQueue:
 
     gamesCreated : list[Game]= []
     gamesStarted: list[Game] = []
+    gamesInExistence : list[Game] = []
 
     playersJoined : list[Player] = []
     teamsJoined : list[Team] = []
 
 
-    gamesFinished : list[Game] = []
 
     playersJoiningList = []
 
@@ -62,11 +63,38 @@ class JoinQueue:
 
         JoinQueue.gamesCreated = []
         JoinQueue.gamesStarted = []
+        JoinQueue.gamesInExistence = []
 
         JoinQueue.playersJoined = []
         JoinQueue.teamsJoined = []
 
         JoinQueue.gamesFinished = []
+
+        gamesExistingResponse = (
+            supabase.table("game")
+            .select("game_id")
+            .execute()
+            .data
+        )
+
+        for game in gamesExistingResponse:
+            JoinQueue.gamesInExistence.append(game["game_id"])
+
+        temp1 = []
+        for game in GamesList.activeCasualGames:
+            if game.gameID not in JoinQueue.gamesInExistence:
+                temp1.append(game)
+
+        for game in temp1:
+            GamesList.activeCasualGames.remove(game)
+
+        temp2 = []
+        for game in GamesList.activeCompGames:
+            if game.gameID not in JoinQueue.gamesInExistence:
+                temp2.append(game)
+
+        for game in temp2:
+            GamesList.activeCompGames.remove(game)
 
         joinGamesQueueResponse = (
             supabase.table("queue_entry")
@@ -107,7 +135,7 @@ class JoinQueue:
         #INSERT games made
         gamesMade = []
         for game in JoinQueue.gamesCreated:
-            newGame = {"game_id": game.gameID, "is_casual":game.isCasual,"park_id":game.parkID,"is_active":game.isActive}
+            newGame = {"game_id": game.gameID, "is_casual":game.isCasual,"park_id":game.parkID,"is_active":game.isActive,"team1_skill":game.team1Skill,"team2_skill":game.team2Skill}
             gamesMade.append(newGame)
 
         if gamesMade: # if gamesMade is not empty
@@ -134,7 +162,7 @@ class JoinQueue:
                     .execute()
                 )
             except Exception as e:
-                print("could not insert individual players into game_player table")
+                print(f"could not insert individual players into game_player table {e}")
 
 
 
